@@ -287,6 +287,12 @@
             margin:14px 0 4px;box-shadow:inset 0 0 0 1px #bfdbfe}
   .guardado .g-txt{flex:1;min-width:200px;line-height:1.45}
   .guardado.viejo{background:#fffbeb;box-shadow:inset 0 0 0 1px #fde68a}
+
+  /* Cartel del modo lectura: la página abierta SIN Python (hosting / celular) */
+  .lectura{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+           background:#ecfdf5;border-radius:12px;padding:11px 15px;font-size:13px;
+           margin-bottom:16px;box-shadow:inset 0 0 0 1px #a7f3d0}
+  .lectura .l-txt{flex:1;min-width:200px;line-height:1.5}
   .sin-nada{grid-column:1/-1;text-align:center;color:var(--tenue);font-size:14px;padding:40px 20px}
 
   /* ---------- Explorador de ofertas (pantalla aparte) ---------- */
@@ -441,10 +447,24 @@
         <code>abrir-verificador.bat</code>, en la misma carpeta. Se abre una ventana negra
         —dejala abierta— y el navegador ya funcionando.
       </div>
+      <p class="fino-nota">
+        Si sólo querés <b>mirar la última búsqueda</b> (por ejemplo desde el celular), no hace
+        falta el programa: alcanza con que el archivo <code>ultima-busqueda.json</code> esté
+        al lado de esta página. Acá no se encontró ninguno. También podés abrirlo a mano:
+      </p>
+      <div class="fila" style="margin-top:10px">
+        <button class="btn-s" id="btnElegirJson">Abrir un ultima-busqueda.json…</button>
+        <input type="file" id="archivoJson" accept=".json,application/json" class="oculto">
+      </div>
     </div>
   </div>
 
   <div id="app" class="oculto">
+
+    <!-- Sólo en modo lectura: la página abierta sin Python detrás. -->
+    <div class="lectura oculto" id="modoLectura">
+      <span class="l-txt"></span>
+    </div>
 
     <div class="fila-tabs">
       <div class="tabs">
@@ -455,7 +475,7 @@
 
     <!-- ============ Pantalla 2: explorador de ofertas ============ -->
     <div id="vistaOfertas" class="oculto">
-      <section class="panel">
+      <section class="panel" id="ofPanelCats">
         <div class="panel-cuerpo">
           <p class="ayuda">
             <b>Todas las ofertas vigentes</b> de las categorías que marques. Recorre cada
@@ -656,6 +676,19 @@
   // Apagado por defecto: las promos de Tarjeta / Cuenta Digital Carrefour
   // no cuentan como oferta hasta que vos lo pidas.
   var incluirTarjeta = false;
+
+  // ------------------------------------------------------------------
+  // MODO LECTURA
+  // La página abierta SIN el servidor de Python detrás: subida a un hosting,
+  // o mirada desde el celular. No hay con quién consultar precios nuevos, así
+  // que se muestra la última búsqueda guardada (ultima-busqueda.json, al lado
+  // de esta página) y se esconde todo lo que necesite al servidor.
+  // Lo que sigue andando: filtros, orden, el selector de Tarjeta, "Usar éste"
+  // y el carrito — el carrito es una navegación a carrefour.com.ar, no pasa
+  // por Python.
+  // ------------------------------------------------------------------
+  var soloLectura = false;
+  var ARCHIVO_SESION = "ultima-busqueda.json";
 
   // ------------------------------------------------------------------
   // Todo pasa por el servidor local de Python (mismo origen).
@@ -1151,7 +1184,9 @@
          + '</div></details>';
     }
 
-    h += '<details><summary>Ajustar búsqueda</summary>' + cajaRebuscar(idx, r.linea) + '</details>';
+    if(!soloLectura){
+      h += '<details><summary>Ajustar búsqueda</summary>' + cajaRebuscar(idx, r.linea) + '</details>';
+    }
     return h + '</div></div>';
   }
 
@@ -1254,6 +1289,7 @@
   }
 
   function cajaRebuscar(idx, linea){
+    if(soloLectura) return "";   // rebuscar necesita al servidor
     return '<div class="rebuscar">'
          + '<input type="text" data-req="' + idx + '" value="' + esc(linea) + '" '
          + 'placeholder="Descripción &gt; palabra clave">'
@@ -1346,7 +1382,7 @@
     // La vigencia del header habla de lo que estás mirando ahora.
     if(esOf) pintarVigencia(ofUsado ? ofertasFiltradas() : []);
     else     pintarVigencia(resultados.map(function(r){ return r.principal; }));
-    if(esOf && !ofCategorias.length) cargarCategorias();
+    if(esOf && !soloLectura && !ofCategorias.length) cargarCategorias();
   }
 
   // ---- Selección múltiple de categorías ----
@@ -1493,7 +1529,7 @@
   }
 
   function buscarOfertas(){
-    if(ofBuscando) return;
+    if(ofBuscando || soloLectura) return;
     var lista = catsAConsultar();
     if(!lista.length){ aviso("Marcá al menos una categoría."); return; }
 
@@ -1805,6 +1841,7 @@
   // archivo se puede borrar a mano para empezar de cero.
   // ------------------------------------------------------------------
   function guardarSesion(parte, datos){
+    if(soloLectura) return Promise.resolve(null);   // no hay Python que escriba
     // Si no se pudo escribir, la herramienta sigue funcionando igual: lo único
     // que se pierde es poder recuperarlo después.
     return api("/api/sesion", { parte:parte, datos:datos })
@@ -1839,45 +1876,119 @@
       + (viejo ? " · pasó más de un día, los precios pueden haber cambiado" : "");
   }
 
+  // ¿El JSON guardado tiene algo que valga la pena mostrar?
+  function hayGuardado(d){
+    var L = d && d.lista, O = d && d.ofertas;
+    return !!((L && L.resultados && L.resultados.length) ||
+              (O && O.items && O.items.length));
+  }
+
+  // Rearma la pantalla con lo guardado, venga de donde venga: del servidor
+  // (/api/sesion) o del archivo suelto (ultima-busqueda.json, modo lectura).
+  // Las dos fuentes tienen exactamente la misma forma, así que es el mismo código.
+  function pintarSesion(d){
+    var L = d && d.lista, O = d && d.ofertas;
+    var algo = false;
+
+    if(L && L.resultados && L.resultados.length){
+      resultados = L.resultados;
+      // Sólo se pisa el textarea si articulos.txt está vacío: el archivo manda.
+      // (En modo lectura no hay articulos.txt, así que siempre se pisa.)
+      if(L.texto && !$("lista").value.trim()){ $("lista").value = L.texto; }
+      actualizarConteo();
+      plegar(false);
+      render();
+      avisoGuardado("lista", L.guardado,
+                    L.resultados.length + (L.resultados.length === 1 ? " artículo" : " artículos"));
+      algo = true;
+    }
+
+    if(O && O.items && O.items.length){
+      ofertas = O.items;
+      ofUsado = true;
+      $("ofToolbar").classList.remove("oculto");
+      $("ofResumen").classList.remove("oculto");
+      pintarOfertas();
+      avisoGuardado("ofertas", O.guardado,
+                    O.items.length + " ofertas" + (O.cats ? " · " + O.cats : ""));
+      algo = true;
+    }
+
+    // El chip de vigencia del encabezado habla de la pantalla que estás
+    // mirando, y al abrir siempre es "Mi lista".
+    pintarVigencia(resultados.map(function(r){ return r.principal; }));
+    if(algo) aviso("Mostrando la última búsqueda guardada.");
+    return algo;
+  }
+
   function recuperarSesion(){
-    return api("/api/sesion").then(function(d){
-      var L = d && d.lista, O = d && d.ofertas;
-      var algo = false;
-
-      if(L && L.resultados && L.resultados.length){
-        resultados = L.resultados;
-        // Sólo se pisa el textarea si articulos.txt está vacío: el archivo manda.
-        if(L.texto && !$("lista").value.trim()){ $("lista").value = L.texto; }
-        actualizarConteo();
-        plegar(false);
-        render();
-        avisoGuardado("lista", L.guardado,
-                      L.resultados.length + (L.resultados.length === 1 ? " artículo" : " artículos"));
-        algo = true;
-      }
-
-      if(O && O.items && O.items.length){
-        ofertas = O.items;
-        ofUsado = true;
-        $("ofToolbar").classList.remove("oculto");
-        $("ofResumen").classList.remove("oculto");
-        pintarOfertas();
-        avisoGuardado("ofertas", O.guardado,
-                      O.items.length + " ofertas" + (O.cats ? " · " + O.cats : ""));
-        algo = true;
-      }
-
-      // El chip de vigencia del encabezado habla de la pantalla que estás
-      // mirando, y al abrir siempre es "Mi lista".
-      pintarVigencia(resultados.map(function(r){ return r.principal; }));
-      if(algo) aviso("Mostrando la última búsqueda guardada.");
-    }, function(){
+    return api("/api/sesion").then(pintarSesion, function(){
       /* todavía no hay nada guardado: la pantalla arranca en blanco, como siempre */
     });
   }
 
+  // ------------------------------------------------------------------
+  // Modo lectura: sin Python, el JSON al lado de la página es la única fuente.
+  // Es lo que permite subir la carpeta a un hosting y mirar desde el celular
+  // la búsqueda que se hizo en la computadora.
+  // ------------------------------------------------------------------
+  function leerArchivoSesion(){
+    // Sin caché: si desde la PC subís un JSON nuevo, el celular tiene que verlo.
+    return fetch(ARCHIVO_SESION, { cache:"no-store" }).then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+  }
+
+  function entrarModoLectura(d){
+    soloLectura = true;
+    $("sinServidor").classList.add("oculto");
+    $("app").classList.remove("oculto");
+
+    // Fuera todo lo que necesita al servidor: buscar, guardar, descartar,
+    // rebuscar (lo saca cajaRebuscar) y el panel de categorías del explorador.
+    ["btnGo", "btnGuardar", "btnRecargar", "ofPanelCats"].forEach(function(id){
+      $(id).classList.add("oculto");
+    });
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".guardado .g-nuevo, .guardado .g-borrar"),
+      function(b){ b.classList.add("oculto"); });
+    $("lista").readOnly = true;
+
+    pintarSesion(d);
+
+    // Con una sola de las dos partes guardada, la otra pantalla queda vacía y
+    // sin explicación: acá se aclara que no falta nada, simplemente no se guardó.
+    if(!resultados.length){
+      $("salida").innerHTML = '<div class="sin-nada">Este archivo no trae ninguna búsqueda '
+                            + 'de tu lista. Mirá la pestaña "Explorar ofertas".</div>';
+    }
+    if(!ofUsado){
+      $("ofSalida").innerHTML = '<div class="sin-nada">Este archivo no trae ofertas guardadas. '
+                              + 'Se guardan al buscarlas desde la computadora.</div>';
+    }
+    // Si lo único guardado son las ofertas, se abre ahí directamente: quedarse
+    // en "Mi lista" mostrando un cartel de "acá no hay nada" no tiene sentido.
+    if(!resultados.length && ofUsado) vista("ofertas");
+
+    // La fecha del cartel es la más reciente de las dos partes (formato ISO:
+    // ordenar como texto alcanza).
+    var fechas = [d.lista && d.lista.guardado, d.ofertas && d.ofertas.guardado]
+                   .filter(Boolean).sort();
+    var cuando = fechas.length ? cuandoLindo(fechas[fechas.length - 1]) : "";
+
+    $("modoLectura").querySelector(".l-txt").innerHTML =
+        "<b>Modo lectura.</b> Estás viendo la última búsqueda hecha en la computadora"
+      + (cuando ? ", <b>guardada " + esc(cuando) + "</b>" : "")
+      + ". Podés filtrar, ordenar, comparar y armar el carrito de Carrefour. "
+      + "Para buscar precios nuevos hay que abrir el programa en la computadora.";
+    $("modoLectura").classList.remove("oculto");
+    aviso("Modo lectura · última búsqueda guardada.");
+  }
+
   // ---------- Proceso ----------
   function verificar(){
+    if(soloLectura) return;   // sin servidor no hay a quién preguntarle
     var lineas = leerLista();
     if(!lineas.length){ aviso("La lista está vacía."); plegar(true); $("lista").focus(); return; }
 
@@ -2091,14 +2202,43 @@
     }, function(e){ b.disabled = false; aviso("No se pudo leer el archivo: " + e.message); });
   };
 
-  // Si abriste el HTML con doble clic (file://) no hay servidor detras.
+  // ---------- Abrir un ultima-busqueda.json a mano ----------
+  // Con file:// (doble clic en el HTML) el navegador no deja leer el archivo de
+  // al lado, así que queda esta salida: elegirlo vos. Sirve igual si te pasaste
+  // el JSON al celular por WhatsApp o por mail.
+  $("btnElegirJson").onclick = function(){ $("archivoJson").click(); };
+  $("archivoJson").onchange = function(){
+    var f = this.files && this.files[0];
+    if(!f) return;
+    var lector = new FileReader();
+    lector.onload = function(){
+      var d = null;
+      try{ d = JSON.parse(lector.result); }
+      catch(e){ aviso("Ese archivo no se pudo leer: no es un JSON válido."); return; }
+      if(!hayGuardado(d)){ aviso("Ese archivo no tiene ninguna búsqueda guardada."); return; }
+      entrarModoLectura(d);
+    };
+    lector.onerror = function(){ aviso("No se pudo abrir el archivo."); };
+    lector.readAsText(f);
+  };
+
+  // ---------- Arranque de verdad ----------
+  // Si no contesta /api/ping no hay Python detrás: o abriste el HTML con doble
+  // clic, o esto está subido a un hosting. En ese caso se intenta mostrar el
+  // ultima-busqueda.json que esté al lado, en MODO LECTURA. Si tampoco está,
+  // recién ahí se explica cómo encender el programa.
   api("/api/ping").then(function(){
     $("app").classList.remove("oculto");
     // Primero la lista de artículos (el archivo manda) y después lo guardado
     // de la última búsqueda, que es lo que rearma la pantalla.
     return cargarArchivo().then(recuperarSesion, recuperarSesion);
   }, function(){
-    $("sinServidor").classList.remove("oculto");
+    return leerArchivoSesion().then(function(d){
+      if(hayGuardado(d)) entrarModoLectura(d);
+      else               $("sinServidor").classList.remove("oculto");
+    }, function(){
+      $("sinServidor").classList.remove("oculto");
+    });
   });
 })();
 </script>

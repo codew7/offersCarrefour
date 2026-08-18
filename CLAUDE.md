@@ -27,10 +27,10 @@ que la página. Por eso el problema de CORS desapareció por completo.
 |---|---|
 | `abrir-verificador.bat` | **Punto de entrada.** Doble clic. Busca `py` y después `python`; si no hay ninguno explica cómo instalarlo. |
 | `verificador.py` | Servidor + búsqueda + puntaje. Sólo biblioteca estándar (`http.server`, `urllib`, `json`, `unicodedata`). No instala nada. |
-| `verificador-carrefour.html` | La pantalla. Lo sirve Python. Si se abre con doble clic detecta que no hay servidor (falla `/api/ping`) y muestra cómo abrirlo bien. |
+| `verificador-carrefour.html` | La pantalla. Lo sirve Python. Sin servidor detrás busca un `ultima-busqueda.json` al lado y, si lo encuentra, se abre en **modo lectura** (ver esa sección); si no, explica cómo encender el programa. |
 | `articulos.txt` | Lista editable. Python la lee al arrancar y el botón "Guardar lista" la reescribe. Un artículo por línea; `#` al principio = comentario. |
 | `categorias.txt` | Categorías marcadas en el explorador de ofertas. Lo escribe el botón "Guardar selección"; se puede editar a mano. Se crea recién la primera vez que guardás. |
-| `ultima-busqueda.json` | **La última búsqueda de cada pantalla**, para no repetirla al volver a abrir. Lo escribe Python solo, al terminar cada búsqueda. Borrarlo a mano equivale a "Descartar". Ver "Los resultados quedan guardados". |
+| `ultima-busqueda.json` | **La última búsqueda de cada pantalla**, para no repetirla al volver a abrir. Lo escribe Python solo, al terminar cada búsqueda. Borrarlo a mano equivale a "Descartar". Es también el archivo que se sube al hosting junto al HTML para mirar desde el celular. Ver "Los resultados quedan guardados" y "Modo lectura". |
 | `CARRITO_OFERTA_JULIO2026.txt` | Lista original de julio 2026. Referencia, no la lee el programa. |
 | `*.pdf` | Comprobantes sueltos, sin relación con esta herramienta. |
 
@@ -270,6 +270,72 @@ Un solo JSON con dos partes independientes, cada una con su marca de tiempo:
 
 > El carrito (`seleccion`) **no** se guarda. Es una decisión de la que hay que acordarse
 > si algún día parece un bug: al recuperar una búsqueda, los artículos marcados no vuelven.
+
+---
+
+## Modo lectura: la página sin Python (hosting / celular)
+
+Se buscó en la computadora y después se quiere **mirar el resultado desde el celular**,
+en el supermercado. Para eso alcanza con subir **dos archivos** a cualquier hosting
+estático:
+
+```
+verificador-carrefour.html
+ultima-busqueda.json        ← el que ya escribe Python en la carpeta
+```
+
+Nada más: ni Python, ni el `.bat`, ni `articulos.txt`. La página detecta sola que no hay
+servidor y entra en **modo lectura**.
+
+### Cómo decide
+
+En el arranque, si `/api/ping` falla (no hay Python), **antes** de dar por perdida la
+pantalla se prueba `fetch("ultima-busqueda.json")` **relativo a la página**:
+
+| Ping | JSON al lado | Qué pasa |
+|---|---|---|
+| ✅ | — | Normal de siempre: `cargarArchivo()` + `recuperarSesion()`. |
+| ❌ | ✅ con datos | **Modo lectura**: `entrarModoLectura(d)`. |
+| ❌ | ❌ | El cartel `#sinServidor` de siempre (cómo encender el `.bat`). |
+
+La ruta del JSON es **relativa** a propósito: así funciona igual en la raíz del dominio
+que en un subdirectorio. Va con `cache:"no-store"`, si no el celular sigue mostrando el
+JSON de la semana pasada después de subir uno nuevo.
+
+### Qué se apaga
+
+`soloLectura` es la única bandera. `entrarModoLectura()`:
+
+- Esconde lo que necesita al servidor: `btnGo`, `btnGuardar`, `btnRecargar`, el panel de
+  categorías del explorador (`#ofPanelCats`) y los botones **Buscar de nuevo** /
+  **Descartar** de los dos carteles `.guardado`. El textarea queda `readOnly`.
+- `cajaRebuscar()` devuelve `""` y no se dibuja el `<details>` de "Ajustar búsqueda".
+- `guardarSesion()`, `verificar()` y `buscarOfertas()` cortan al entrar; `vista()` no
+  llama a `cargarCategorias()`.
+- Cartel verde `#modoLectura` arriba de las pestañas, con la fecha de lo guardado (la
+  más reciente de las dos partes).
+- Si el JSON trae **sólo ofertas** (el caso normal), se abre directo en esa pestaña; la
+  otra explica que ahí no hay nada guardado, en vez de quedar en blanco.
+
+### Qué sigue funcionando
+
+Todo lo que ya vivía en el navegador: filtros, orden, paginado, el selector de Tarjeta /
+Cuenta Digital, el cálculo de promos de varias unidades, el precio por kilo/litro, "Usar
+éste", ampliar imágenes y **el carrito** — el carrito es una navegación a
+`carrefour.com.ar/checkout/cart/add`, no pasa por Python, así que desde el celular anda
+igual.
+
+### El botón "Abrir un ultima-busqueda.json…"
+
+Abrir el HTML con **doble clic** (`file://`) **no** entra en modo lectura solo: el
+navegador bloquea leer el archivo de al lado (origen `null`). Por eso el cartel
+`#sinServidor` tiene un `<input type="file">`: elegís el JSON a mano y la pantalla se
+arma igual. Sirve también si te pasaste el archivo al celular por mail o WhatsApp.
+
+> **Refactor que esto trajo:** `recuperarSesion()` se partió en `pintarSesion(d)` (rearma
+> la pantalla con un JSON, venga de donde venga) y `recuperarSesion()` (lo pide a
+> `/api/sesion`). Las dos fuentes tienen exactamente la misma forma, así que hay un solo
+> camino de dibujo. `hayGuardado(d)` es el chequeo compartido de "¿esto tiene algo?".
 
 ---
 
@@ -744,8 +810,11 @@ Detalles que muerden:
   más arriba).
 - No incluye cupones personalizados de "Mi Carrefour" ni de la app.
 - Sin login: no se ven precios ni promos exclusivas de cuenta.
-- Requiere Python instalado (el `.bat` avisa y da el link si falta).
+- Requiere Python instalado (el `.bat` avisa y da el link si falta). Sólo **para buscar**:
+  para mirar lo ya buscado alcanza con el HTML y el JSON (modo lectura).
 - La ventana negra tiene que quedar abierta mientras se usa la herramienta.
+- En modo lectura los precios son los del momento en que se hizo la búsqueda en la
+  computadora: el celular no consulta nada, sólo lee el archivo que subiste.
 - El envío al carrito usa la sesión del navegador. La **primera** vez sigue siendo lenta:
   Carrefour tiene que crear la sesión y el orderForm, y puede pedirte sucursal o método
   de entrega. Eso pasa una sola vez, no una por artículo.
