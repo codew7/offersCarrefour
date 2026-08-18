@@ -2,7 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#004E9F">
+<meta name="color-scheme" content="light">
 <title>Precios y ofertas · Carrefour AR</title>
 <style>
   :root{
@@ -93,6 +95,10 @@
   .kpi.destacado b{color:var(--verde)}
 
   .controles{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  /* Los chips y la fila de búsqueda son dos bloques: en el celular el primero
+     se convierte en un carrusel horizontal y el segundo baja a su propia línea. */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .linea2{display:flex;gap:8px;flex:1;align-items:center;min-width:0}
   .chip{background:#fff;border-radius:999px;padding:7px 15px;font-size:13px;cursor:pointer;
         user-select:none;box-shadow:inset 0 0 0 1px var(--linea);transition:all .15s;white-space:nowrap}
   .chip:hover{box-shadow:inset 0 0 0 1px var(--azul);color:var(--azul)}
@@ -117,11 +123,53 @@
   .switch.on .pista::after{transform:translateX(15px)}
   .switch input{position:absolute;opacity:0;pointer-events:none}
 
-  .buscador{position:relative}
+  /* En pantalla chica el switch dice sólo "Tarjeta": el texto largo no entra. */
+  .switch .sw-corta{display:none}
+
+  .buscador{position:relative;flex:1;min-width:0}
   .buscador input{padding:8px 30px 8px 14px;border-radius:999px;border:0;font-size:13px;
-                  box-shadow:inset 0 0 0 1px var(--linea);min-width:190px;font-family:inherit;background:#fff}
+                  box-shadow:inset 0 0 0 1px var(--linea);min-width:190px;width:100%;
+                  font-family:inherit;background:#fff}
   .buscador .limpiar{position:absolute;right:4px;top:50%;transform:translateY(-50%);
                      background:none;box-shadow:none;color:var(--tenue);padding:4px 8px;font-size:15px}
+
+  /* ---------- Filtro temporal de categorías (sobre lo ya buscado) ---------- */
+  /* No vuelve a consultar nada: recorta lo que ya está en pantalla. Vive en la
+     barra pegajosa del explorador, al lado del resto de los filtros. */
+  .of-controles .switch{order:9}
+  .cat-chip{display:inline-flex;align-items:center;gap:6px;font-weight:600;
+            min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .cat-chip .n{font-weight:600}
+  .cat-chip.filtrando{background:var(--azul);color:#fff;box-shadow:none}
+  .cat-chip.filtrando .n{opacity:.85}
+  .cat-chip .flechita{font-size:10px;opacity:.6}
+
+  .catbox{margin-top:9px;background:#fff;border-radius:12px;box-shadow:var(--sombra);
+          padding:10px 13px 12px;max-height:min(46vh,330px);overflow:auto}
+  .cb-cab{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:-10px -13px 8px;
+          padding:10px 13px 8px;position:sticky;top:-10px;background:#fff;z-index:2;
+          border-bottom:1px solid var(--linea)}
+  .cb-tit{font-size:11px;color:var(--tenue);text-transform:uppercase;
+          letter-spacing:.4px;font-weight:700}
+  .cb-cab input[type=search]{border:0;border-radius:9px;padding:7px 11px;font-size:13px;flex:1;
+                             min-width:120px;box-shadow:inset 0 0 0 1px var(--linea);font-family:inherit}
+  .cb-cuerpo{column-width:250px;column-gap:22px}
+  .cb-dep{break-inside:avoid;margin-bottom:11px}
+  .cb-l{display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 2px;
+        cursor:pointer;line-height:1.25;border-radius:7px}
+  .cb-l:hover{background:#f8fafc}
+  .cb-l input{width:16px;height:16px;accent-color:var(--azul);flex-shrink:0;margin:0}
+  .cb-l.dep{font-weight:700;font-size:13.5px}
+  .cb-l.hijo{padding-left:8px;color:var(--tenue)}
+  .cb-l .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+  .cb-n{font-size:11px;color:var(--tenue);background:#f1f5f9;border-radius:999px;
+        padding:1px 8px;font-weight:700;flex-shrink:0}
+  .cb-solo{background:none;box-shadow:none;color:var(--azul);padding:2px 7px;font-size:11px;
+           border-radius:6px;font-weight:700;opacity:0;flex-shrink:0}
+  .cb-l:hover .cb-solo{opacity:1}
+  .cb-solo:hover{background:var(--azul-claro)}
+  .cb-dep.oculto,.cb-l.oculto{display:none}
+  .cb-nada{font-size:13px;color:var(--tenue);padding:6px 2px}
 
   /* ---------- Grilla de resultados ---------- */
   /* Un artículo debajo del otro, siempre. Lo pidió el usuario. */
@@ -408,6 +456,10 @@
   .oc .precios{margin-top:2px}
   .oc .precio{font-size:22px}
 
+  /* Al cambiar de página se salta al principio de la lista: sin esto, la
+     barra pegajosa de filtros tapa las primeras tarjetas. */
+  #ofSalida,#salida{scroll-margin-top:150px}
+
   /* El padding grande deja lugar a la barra flotante del carrito. */
   footer{text-align:center;color:var(--tenue);font-size:12px;padding:8px 20px 90px}
 
@@ -419,11 +471,146 @@
   .lightbox img{max-width:min(92vw,620px);max-height:88vh;object-fit:contain;
                 border-radius:14px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45)}
 
-  @media (max-width:640px){
-    .wrap{padding:14px 12px 30px}
-    .switch{margin-left:0}
-    .grid{grid-template-columns:1fr}
-    .kpi{min-width:calc(50% - 5px)}
+  /* ================================================================
+     CELULAR
+     Todo lo de abajo persigue una sola idea: que la pantalla la ocupen
+     LOS RESULTADOS. Lo que sirve para configurar (la lista, las
+     categorías a buscar) se pliega solo; lo que sirve para mirar
+     (barra de filtros y tarjetas) queda a mano y compacto.
+     ================================================================ */
+  @media (max-width:720px){
+    /* Con menos de 16px el navegador del celular hace zoom solo al tocar
+       un campo y después la página queda corrida. */
+    input,select,textarea{font-size:16px}
+
+    header{padding:9px 13px;gap:5px 10px}
+    header h1{font-size:14.5px;flex:1 1 auto;line-height:1.25}
+    .vigencia{font-size:11px;padding:3px 9px;order:3;flex:1 1 100%;text-align:center}
+    #estado{font-size:11.5px;flex:1 1 100%;min-height:0}
+    .wrap{padding:11px 11px 24px}
+
+    /* Pestañas a todo lo ancho: son el cambio de pantalla más usado. */
+    .fila-tabs{margin-bottom:11px}
+    .tabs{width:100%;padding:4px}
+    .tab{flex:1;padding:10px 6px;font-size:13.5px}
+
+    .panel{border-radius:12px;margin-bottom:12px}
+    .panel-cuerpo{padding:13px}
+    .plegable{padding:13px}
+    textarea{height:150px}
+    .fila{gap:8px}
+    .fila button{flex:1 1 132px;min-width:0;padding:12px 10px}
+
+    /* ---- Barra de filtros ---- */
+    .toolbar{padding:9px 0 9px;margin:0 -11px 6px;padding-left:11px;padding-right:11px;
+             transition:transform .2s ease}
+    /* Mientras bajás mirando resultados la barra se corre para arriba y la
+       pantalla queda entera para las tarjetas; apenas subís un poco, vuelve. */
+    body.bajando .toolbar{transform:translateY(-102%)}
+    .stats{gap:6px;margin-bottom:9px}
+    .kpi{flex:1 1 0;min-width:0;flex-direction:column;align-items:center;gap:1px;
+         padding:7px 3px;border-radius:10px}
+    .kpi b{font-size:18px}
+    .kpi span{font-size:10px;line-height:1.15;text-align:center}
+
+    /* Los chips no se apilan en tres filas: se deslizan de costado.
+       El margen negativo los deja llegar al borde de la pantalla. */
+    .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+           margin:0 -11px;padding:0 11px 2px}
+    .chips::-webkit-scrollbar{display:none}
+    .chip{padding:9px 15px;font-size:13px}
+    .linea2{flex:1 1 100%;margin-top:8px}
+    .buscador input{min-width:0}
+    .switch{margin-left:0;padding:7px 13px 7px 9px}
+    .switch .sw-larga{display:none}
+    .switch .sw-corta{display:inline}
+
+    /* Explorador: buscador arriba, categorías + tarjeta, y los dos selects
+       compartiendo la última fila. Todo visible, sin menús escondidos. */
+    .of-controles{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
+    .of-controles .buscador{grid-column:1/-1;order:0}
+    .of-controles .cat-chip{order:1;justify-content:center;padding:10px 8px}
+    .of-controles .switch{order:2;justify-content:center;padding:8px 10px}
+    .of-controles #ofDesc{order:3}
+    .of-controles #ofOrden{order:4}
+    .of-controles select{width:100%;min-width:0;padding:10px 9px}
+    .catbox{max-height:min(52vh,360px)}
+    .cb-cuerpo{column-width:auto}
+    .cb-l{padding:8px 4px}
+    .cb-solo{opacity:1}
+
+    /* ---- Tarjetas de "Mi lista" ---- */
+    .grid{gap:10px}
+    .grupo{margin-top:12px;font-size:11px}
+    .card{padding:13px;border-radius:12px;row-gap:10px}
+    .der{padding:11px;gap:9px}
+    .thumb{width:68px;height:68px}
+    .cuerpo{gap:11px}
+    .nombre{font-size:15px}
+    .precio{font-size:24px}
+    .flag{right:10px;font-size:10px}
+    .alts{max-height:320px}
+    /* La alternativa se lee en dos renglones: qué es arriba, cuánto sale
+       y el botón abajo. En una sola línea no entraba nada. */
+    .alt{flex-wrap:wrap;gap:8px;padding:9px 6px}
+    .alt-thumb{width:38px;height:38px}
+    .alt .n{flex:1 1 60%}
+    .alt .p{order:2}
+    .btn-usar{order:3;margin-left:auto;padding:8px 12px;font-size:12px}
+    .rebuscar input{min-width:0}
+    .rebuscar button{padding:10px 16px}
+
+    /* Dedos, no mouse: los dos controles del carrito crecen. */
+    .acciones{gap:8px}
+    .acciones .cant{width:62px;padding:10px 6px}
+    .btn-cart{padding:12px;font-size:13.5px}
+
+    /* ---- Tarjetas del explorador ---- */
+    .of-grid{grid-template-columns:1fr;gap:10px}
+    .oc{padding:12px;border-radius:12px}
+    .oc .precio{font-size:21px}
+    .oc-nombre{font-size:14px}
+    /* Nombres largos no empujan la tarjeta: dos renglones y listo. */
+    .oc-nombre a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+                 overflow:hidden}
+    .of-resumen{margin:11px 0 9px}
+
+    /* Paginado: sólo anterior / siguiente, que es lo que se usa con el pulgar. */
+    .of-pag{gap:6px}
+    .of-pag button{padding:11px 14px;flex:1}
+    .of-pag .pg-ext{display:none}
+    .of-pag .cual{flex:1 1 100%;order:-1;text-align:center;padding:0 0 4px}
+
+    /* ---- Barra del carrito: fija abajo, a todo lo ancho ---- */
+    #barraCarrito{left:9px;right:9px;bottom:9px;transform:none;max-width:none;
+                  border-radius:14px;padding:9px 9px 9px 13px;gap:6px;
+                  padding-bottom:calc(9px + env(safe-area-inset-bottom))}
+    #barraCarrito .cc-txt{font-size:12.5px;line-height:1.2}
+    .cc-vaciar{padding:10px 8px}
+    .cc-ir{flex:1;padding:12px 10px;font-size:13.5px}
+    .cc-ir .cc-larga{display:none}
+    footer{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+
+    .lightbox{padding:14px}
+    .lightbox img{max-width:94vw}
+    .guardado,.lectura{padding:10px 12px;font-size:12.5px}
+    .guardado .btn-mini,.lectura .btn-mini{padding:9px 13px}
+    .cats{max-height:250px;column-width:auto}
+    .cat-l{padding:6px 0}
+    .cats-cab{gap:7px}
+    .of-filtros .campo{flex:1 1 auto}
+    .of-filtros .campo button{width:100%}
+  }
+  .cc-ir .cc-corta{display:none}
+  @media (max-width:720px){ .cc-ir .cc-corta{display:inline} }
+
+  /* Pantallas muy angostas (iPhone SE y parecidos). */
+  @media (max-width:380px){
+    .kpi b{font-size:16px}
+    .kpi span{font-size:9.5px}
+    .of-controles{grid-template-columns:1fr}
+    .precio{font-size:22px}
+    .thumb{width:60px;height:60px}
   }
 </style>
 </head>
@@ -478,8 +665,15 @@
 
     <!-- ============ Pantalla 2: explorador de ofertas ============ -->
     <div id="vistaOfertas" class="oculto">
-      <section class="panel" id="ofPanelCats">
-        <div class="panel-cuerpo">
+      <!-- Se pliega solo apenas hay ofertas en pantalla: en el celular, elegir
+           categorías es la parte que menos se mira y la que más lugar ocupa. -->
+      <section class="panel abierto" id="ofPanelCats">
+        <button class="plegable" id="ofBtnPlegar" aria-expanded="true">
+          <span class="flecha">▶</span>
+          <b>Elegir categorías y buscar</b>
+          <span class="cuenta" id="ofCuentaCab"></span>
+        </button>
+        <div class="panel-cuerpo" id="ofCuerpoCats">
           <p class="ayuda">
             <b>Todas las ofertas vigentes</b> de las categorías que marques. Recorre cada
             una entera, así que cuantas más marques, más tarda; la segunda vez es
@@ -524,10 +718,16 @@
       </div>
 
       <div class="toolbar oculto" id="ofToolbar">
-        <div class="controles">
+        <div class="controles of-controles">
           <span class="buscador">
             <input type="search" id="ofTexto" placeholder="Filtrar por nombre o marca…">
           </span>
+          <!-- Filtro TEMPORAL de categorías: recorta lo que ya está buscado,
+               sin volver a consultar nada. Funciona también en modo lectura. -->
+          <button class="chip cat-chip" id="ofBtnCats"
+                  title="Ver sólo algunas de las categorías que ya buscaste">
+            Categorías<span class="n"> · todas</span><span class="flechita">▼</span>
+          </button>
           <select id="ofDesc" title="Descuento mínimo">
             <option value="0">Cualquier descuento</option>
             <option value="10">10% o más</option>
@@ -537,7 +737,7 @@
             <option value="50">50% o más</option>
           </select>
           <select id="ofOrden" title="Ordenar">
-            <option value="nombre" selected>Nombre (A-Z)</option>
+            <option value="nombre" selected>Categoría y nombre (A-Z)</option>
             <option value="desc">Mayor descuento</option>
             <option value="precio">Menor precio</option>
             <option value="medida">Mejor precio por kilo/litro</option>
@@ -546,8 +746,18 @@
                  title="Promos que sólo aplican pagando con Tarjeta Carrefour o Cuenta Digital Carrefour">
             <input type="checkbox" id="ofChkTarjeta">
             <span class="pista"></span>
-            <span>Contar Tarjeta / Cuenta Digital</span>
+            <span class="sw-larga">Contar Tarjeta / Cuenta Digital</span>
+            <span class="sw-corta">Tarjeta</span>
           </label>
+        </div>
+        <div class="catbox oculto" id="ofCajaCats">
+          <div class="cb-cab">
+            <span class="cb-tit">Ver sólo</span>
+            <input type="search" id="ofBuscarCat" placeholder="Buscar categoría…">
+            <button class="btn-mini" id="ofVerTodas">Todas</button>
+            <button class="btn-mini" id="ofVerNinguna">Ninguna</button>
+          </div>
+          <div class="cb-cuerpo" id="ofListaCats"></div>
         </div>
       </div>
 
@@ -625,20 +835,25 @@
     <div class="toolbar oculto" id="toolbar">
       <div class="stats" id="stats"></div>
       <div class="controles">
-        <span class="chip on" data-f="todos">Todos<span class="n"></span></span>
-        <span class="chip" data-f="oferta">Ofertas<span class="n"></span></span>
-        <span class="chip" data-f="regular">Precio regular<span class="n"></span></span>
-        <span class="chip" data-f="dudoso">A revisar<span class="n"></span></span>
-        <span class="chip" data-f="sin">Sin resultados<span class="n"></span></span>
-        <span class="buscador">
-          <input type="search" id="buscador" placeholder="Filtrar por nombre…">
-        </span>
-        <label class="switch" id="swTarjeta"
-               title="Promos que sólo aplican pagando con Tarjeta Carrefour o Cuenta Digital Carrefour">
-          <input type="checkbox" id="chkTarjeta">
-          <span class="pista"></span>
-          <span>Contar Tarjeta / Cuenta Digital</span>
-        </label>
+        <div class="chips">
+          <span class="chip on" data-f="todos">Todos<span class="n"></span></span>
+          <span class="chip" data-f="oferta">Ofertas<span class="n"></span></span>
+          <span class="chip" data-f="regular">Precio regular<span class="n"></span></span>
+          <span class="chip" data-f="dudoso">A revisar<span class="n"></span></span>
+          <span class="chip" data-f="sin">Sin resultados<span class="n"></span></span>
+        </div>
+        <div class="linea2">
+          <span class="buscador">
+            <input type="search" id="buscador" placeholder="Filtrar por nombre…">
+          </span>
+          <label class="switch" id="swTarjeta"
+                 title="Promos que sólo aplican pagando con Tarjeta Carrefour o Cuenta Digital Carrefour">
+            <input type="checkbox" id="chkTarjeta">
+            <span class="pista"></span>
+            <span class="sw-larga">Contar Tarjeta / Cuenta Digital</span>
+            <span class="sw-corta">Tarjeta</span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -654,7 +869,10 @@
 <div id="barraCarrito" class="oculto">
   <span class="cc-txt"><b id="ccCant">0</b> <span id="ccPal">artículos</span> listos</span>
   <button class="cc-vaciar" id="ccVaciar">Vaciar</button>
-  <button class="cc-ir" id="ccEnviar">Enviar al carrito de Carrefour</button>
+  <button class="cc-ir" id="ccEnviar">
+    <span class="cc-larga">Enviar al carrito de Carrefour</span>
+    <span class="cc-corta">Ir al carrito</span>
+  </button>
 </div>
 
 <!-- Imagen ampliada: se llena y se muestra al hacer click en cualquier miniatura. -->
@@ -988,6 +1206,19 @@
     return esOferta(r.principal) ? 0 : 1;
   }
 
+  // El texto que se compara al filtrar: sin mayúsculas y sin tildes, así
+  // "cafe" encuentra "café" (en el celular nadie escribe los acentos).
+  var textoDe = {};                 // id -> texto ya normalizado, para no rehacerlo en cada tecla
+
+  function paraBuscar(p){
+    var k = p.id;
+    if(k === undefined || k === null) return normTxt(p.nombre + " " + (p.marca || ""));
+    if(textoDe[k] === undefined){
+      textoDe[k] = normTxt(p.nombre + " " + (p.marca || "") + " " + (p.cat || ""));
+    }
+    return textoDe[k];
+  }
+
   function pasaFiltro(r){
     var p = r.principal;
     if(filtro === "oferta"  && !(p && esOferta(p)))  return false;
@@ -995,7 +1226,7 @@
     if(filtro === "dudoso"  && !(p && p.score < 0.8)) return false;
     if(filtro === "sin"     && p) return false;
     if(texto){
-      var heno = (r.desc + " " + (p ? p.nombre + " " + p.marca : "")).toLowerCase();
+      var heno = normTxt(r.desc + " " + (p ? p.nombre + " " + p.marca : ""));
       if(heno.indexOf(texto) === -1) return false;
     }
     return true;
@@ -1423,8 +1654,11 @@
 
   function pintarCuentaCat(){
     var n = catsElegidas().length;
-    $("ofCuentaCat").textContent = n === 0 ? "ninguna"
-                                : n === 1 ? "1 elegida" : n + " elegidas";
+    var txt = n === 0 ? "ninguna" : n === 1 ? "1 elegida" : n + " elegidas";
+    $("ofCuentaCat").textContent = txt;
+    // La cabecera plegada tiene que decir lo mismo: es lo único que se ve.
+    $("ofCuentaCab").textContent = n === 0 ? "ninguna marcada"
+                                 : n === 1 ? "1 marcada" : n + " marcadas";
   }
 
   function cargarCategorias(){
@@ -1542,7 +1776,9 @@
     ofBuscando = true;
     ofUsado = true;
     ofCancelado = false;
+    reiniciarCatsVista();             // el filtro de mirar es de la búsqueda anterior
     avisoGuardado("ofertas", null);   // lo que viene es fresco: el cartel sobra
+    plegarOf(false);                  // la pantalla es para ver ofertas, no para configurar
     $("ofBuscar").disabled = true;
     $("ofToolbar").classList.remove("oculto");
     $("ofResumen").classList.remove("oculto");
@@ -1635,8 +1871,65 @@
     return Math.max(p.desc || 0, pr ? pr.off : 0);
   }
 
-  function ofertasFiltradas(){
-    var txt = ($("ofTexto").value || "").trim().toLowerCase();
+  // ------------------------------------------------------------------
+  // Filtro TEMPORAL de categorías, sobre lo que ya está buscado.
+  //
+  // El panel de arriba elige qué categorías CONSULTAR (tarda minutos). Éste
+  // es otra cosa: una vez que las ofertas ya están en pantalla, sirve para
+  // mirar de a una góndola por vez sin volver a buscar nada. Por eso no se
+  // guarda en ningún lado y se reinicia con cada búsqueda nueva: es para el
+  // rato en que estás mirando.
+  //
+  // Se guardan las categorías APAGADAS, no las encendidas: así una categoría
+  // que aparece recién (la búsqueda sigue trayendo cosas mientras mirás) se ve
+  // sola, sin quedar escondida por no haber existido cuando tildaste.
+  // Vacío = se ven todas. La clave es el texto completo que manda Python
+  // ("Almacén › Arroz").
+  // ------------------------------------------------------------------
+  var catsOcultas = {};
+  var catsAbierto = false;
+
+  function claveCat(p){
+    var c = String((p && p.cat) || "").trim();
+    return c || "Sin categoría";
+  }
+
+  // "Almacén › Arroz" → departamento y subcategoría. Si Carrefour mandó un
+  // solo tramo, ese tramo hace de las dos cosas.
+  function partesCat(clave){
+    var t = String(clave).split("›").map(function(s){ return s.trim(); })
+                         .filter(function(s){ return s; });
+    if(!t.length)      return { dep:"Sin categoría", sub:"Sin categoría" };
+    if(t.length === 1) return { dep:t[0], sub:t[0] };
+    return { dep:t[0], sub:t[t.length - 1] };
+  }
+
+  function hayFiltroCats(){
+    return Object.keys(catsOcultas).length > 0;
+  }
+
+  // Cuántas categorías quedan a la vista, de las que trajo la búsqueda.
+  function catsALaVista(){
+    return catsDeLasOfertas().filter(function(k){ return !catsOcultas[k]; }).length;
+  }
+
+  // Todas las categorías presentes en lo buscado, ordenadas alfabéticamente.
+  // Se recuerda el resultado: se pregunta en cada repintado y recorrer miles
+  // de ofertas cada vez no hace falta. Mientras la búsqueda avanza la lista
+  // crece, y ahí sí se recalcula.
+  var cacheCats = null, cacheCatsN = -1;
+
+  function catsDeLasOfertas(){
+    if(cacheCats && cacheCatsN === ofertas.length) return cacheCats;
+    var vistas = {};
+    ofertas.forEach(function(p){ vistas[claveCat(p)] = true; });
+    cacheCats = Object.keys(vistas).sort(function(a, b){ return a.localeCompare(b, "es"); });
+    cacheCatsN = ofertas.length;
+    return cacheCats;
+  }
+
+  function ofertasFiltradas(sinCat){
+    var txt = normTxt(($("ofTexto").value || "").trim());
     var min = +$("ofDesc").value || 0;
     var orden = $("ofOrden").value;
 
@@ -1645,15 +1938,27 @@
       // Digital deja de ser oferta y desaparece de la pantalla.
       if(!esOferta(p)) return false;
       if(min && descuentoDe(p) < min) return false;
-      if(txt && (p.nombre + " " + p.marca + " " + (p.cat || "")).toLowerCase().indexOf(txt) < 0) return false;
+      if(txt && paraBuscar(p).indexOf(txt) < 0) return false;
+      // sinCat: se saltea el filtro de categorías. Es como se cuenta cuántas
+      // ofertas tiene cada una — si no, cada categoría se contaría a sí misma
+      // en cero apenas la destildás.
+      if(!sinCat && catsOcultas[claveCat(p)]) return false;
       return true;
     });
+
+    if(sinCat) return lista;    // sólo para contar: ordenar sería al pedo
 
     function precioVer(p){ var x = promoUnitaria(p); return x ? x.unitario : p.precio; }
 
     lista.sort(function(a, b){
       if(orden === "precio")  return precioVer(a) - precioVer(b);
-      if(orden === "nombre")  return a.nombre.localeCompare(b.nombre, "es");
+      if(orden === "nombre"){
+        // Primero la categoría, después el producto: los de la misma góndola
+        // quedan uno atrás del otro, en orden alfabético los dos.
+        var ca = String(a.cat || ""), cb = String(b.cat || "");
+        if(ca !== cb) return ca.localeCompare(cb, "es");
+        return a.nombre.localeCompare(b.nombre, "es");
+      }
       if(orden === "medida"){
         var ma = porMedida(a), mb = porMedida(b);
         if(!ma && !mb) return 0;
@@ -1665,6 +1970,187 @@
       return descuentoDe(b) - descuentoDe(a);
     });
     return lista;
+  }
+
+  // ---- El panel del filtro de categorías ----
+  function vistaMarcada(clave){ return !catsOcultas[clave]; }
+
+  function ocultarCat(clave, ocultar){
+    if(ocultar) catsOcultas[clave] = true;
+    else        delete catsOcultas[clave];
+  }
+
+  function abrirCatsVista(v){
+    catsAbierto = (v === undefined) ? !catsAbierto : !!v;
+    $("ofCajaCats").classList.toggle("oculto", !catsAbierto);
+    if(catsAbierto) pintarCatsVista();
+  }
+
+  function actualizarChipCats(){
+    var todas = catsDeLasOfertas().length;
+    var elegidas = catsALaVista();
+    var b = $("ofBtnCats");
+    var filtrando = hayFiltroCats();
+    b.classList.toggle("filtrando", filtrando);
+    b.querySelector(".n").textContent =
+      filtrando ? " · " + elegidas + "/" + todas : " · todas";
+  }
+
+  function pintarCatsVista(){
+    var cont = $("ofListaCats");
+    var todas = catsDeLasOfertas();
+    if(!todas.length){
+      cont.innerHTML = '<div class="cb-nada">Todavía no hay ofertas para filtrar.</div>';
+      actualizarChipCats();
+      return;
+    }
+
+    // Cuántas ofertas aporta cada categoría CON los demás filtros puestos
+    // (texto, descuento, Tarjeta) pero sin el de categorías.
+    var cuenta = {};
+    ofertasFiltradas(true).forEach(function(p){
+      var k = claveCat(p);
+      cuenta[k] = (cuenta[k] || 0) + 1;
+    });
+
+    var deps = {}, orden = [];
+    todas.forEach(function(k){
+      var q = partesCat(k);
+      if(!deps[q.dep]){ deps[q.dep] = []; orden.push(q.dep); }
+      deps[q.dep].push({ clave:k, sub:q.sub, n:cuenta[k] || 0 });
+    });
+    orden.sort(function(a, b){ return a.localeCompare(b, "es"); });
+
+    var html = "";
+    orden.forEach(function(dep){
+      var hijos = deps[dep];
+      hijos.sort(function(a, b){ return a.sub.localeCompare(b.sub, "es"); });
+      var total = 0;
+      hijos.forEach(function(h){ total += h.n; });
+      var buscaDep = normTxt(dep + " " + hijos.map(function(h){ return h.sub; }).join(" "));
+
+      html += '<div class="cb-dep" data-busca="' + esc(buscaDep) + '">';
+
+      // Departamento sin subcategorías propias: una sola línea, no dos iguales.
+      if(hijos.length === 1 && hijos[0].sub === dep){
+        html += filaCat(hijos[0], "dep", dep);
+      }else{
+        var todosM = hijos.every(function(h){ return vistaMarcada(h.clave); });
+        html += '<label class="cb-l dep" data-busca="' + esc(normTxt(dep)) + '">'
+              + '<input type="checkbox" data-vdep="' + esc(dep) + '"'
+              + (todosM ? " checked" : "") + '>'
+              + '<span class="txt">' + esc(dep) + '</span>'
+              + '<span class="cb-n">' + total + '</span></label>';
+        hijos.forEach(function(h){ html += filaCat(h, "hijo", dep); });
+      }
+      html += '</div>';
+    });
+
+    cont.innerHTML = html;
+    conectarCatsVista(cont);
+    filtrarCatsVista();
+    sincronizarDeps();
+    actualizarChipCats();
+  }
+
+  function filaCat(h, clase, dep){
+    return '<label class="cb-l ' + clase + '" data-busca="' + esc(normTxt(dep + " " + h.sub)) + '">'
+         + '<input type="checkbox" data-vcat="' + esc(h.clave) + '"'
+         + (vistaMarcada(h.clave) ? " checked" : "") + '>'
+         + '<span class="txt" title="' + esc(h.clave) + '">' + esc(h.sub) + '</span>'
+         + '<span class="cb-n">' + h.n + '</span>'
+         + '<button class="cb-solo" data-solo="' + esc(h.clave) + '"'
+         + ' title="Ver solamente esta categoría">sólo</button></label>';
+  }
+
+  // El tilde del departamento sigue a sus hijos: entero, a medias o vacío.
+  function sincronizarDeps(){
+    var cont = $("ofListaCats");
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-vdep]"), function(chk){
+      var dep = chk.getAttribute("data-vdep"), total = 0, marcados = 0;
+      Array.prototype.forEach.call(
+        chk.parentNode.parentNode.querySelectorAll("[data-vcat]"), function(h){
+          total++;
+          if(vistaMarcada(h.getAttribute("data-vcat"))) marcados++;
+        });
+      chk.checked = total > 0 && marcados === total;
+      chk.indeterminate = marcados > 0 && marcados < total;
+    });
+  }
+
+  // Cambió el filtro: se repinta la pantalla, pero NO el panel — así no se
+  // pierde el scroll ni salta lo que estás tocando.
+  function aplicarCatsVista(){
+    sincronizarDeps();
+    actualizarChipCats();
+    ofPagina = 1;
+    pintarOfertas();
+  }
+
+  function conectarCatsVista(cont){
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-vcat]"), function(chk){
+      chk.onchange = function(){
+        ocultarCat(chk.getAttribute("data-vcat"), !chk.checked);
+        aplicarCatsVista();
+      };
+    });
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-vdep]"), function(chk){
+      chk.onchange = function(){
+        var v = chk.checked;
+        Array.prototype.forEach.call(
+          chk.parentNode.parentNode.querySelectorAll("[data-vcat]"), function(h){
+            h.checked = v;
+            ocultarCat(h.getAttribute("data-vcat"), !v);
+          });
+        aplicarCatsVista();
+      };
+    });
+
+    // "sólo": deja marcada esa y nada más. Es el atajo que más se usa en el
+    // celular, donde destildar treinta categorías a mano no es opción.
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-solo]"), function(b){
+      b.onclick = function(e){
+        e.preventDefault(); e.stopPropagation();
+        var sola = b.getAttribute("data-solo");
+        catsOcultas = {};
+        catsDeLasOfertas().forEach(function(k){ if(k !== sola) catsOcultas[k] = true; });
+        Array.prototype.forEach.call(cont.querySelectorAll("[data-vcat]"), function(h){
+          h.checked = vistaMarcada(h.getAttribute("data-vcat"));
+        });
+        aplicarCatsVista();
+      };
+    });
+  }
+
+  function filtrarCatsVista(){
+    var q = normTxt(($("ofBuscarCat").value || "").trim());
+    Array.prototype.forEach.call($("ofListaCats").querySelectorAll(".cb-dep"), function(dep){
+      if(!q){
+        dep.classList.remove("oculto");
+        Array.prototype.forEach.call(dep.querySelectorAll(".cb-l"), function(l){
+          l.classList.remove("oculto");
+        });
+        return;
+      }
+      var hayDep = (dep.getAttribute("data-busca") || "").indexOf(q) >= 0;
+      var visibles = 0;
+      Array.prototype.forEach.call(dep.querySelectorAll(".cb-l"), function(l){
+        var ok = (l.getAttribute("data-busca") || "").indexOf(q) >= 0;
+        l.classList.toggle("oculto", !ok);
+        if(ok) visibles++;
+      });
+      dep.classList.toggle("oculto", !hayDep && !visibles);
+    });
+  }
+
+  // Búsqueda nueva (o descarte): el filtro temporal se va con ella.
+  function reiniciarCatsVista(){
+    catsOcultas = {};
+    cacheCats = null;
+    abrirCatsVista(false);
+    $("ofBuscarCat").value = "";
+    actualizarChipCats();
   }
 
   // Se muestran TODAS las ofertas, pero de a 100 por página: con más de eso
@@ -1683,16 +2169,22 @@
     var desde = (ofPagina - 1) * POR_PAGINA_OF;
     var hasta = Math.min(desde + POR_PAGINA_OF, total);
 
+    var filtrandoCats = hayFiltroCats();
     $("ofResumen").innerHTML = ofBuscando
       ? "Buscando… " + total + " ofertas hasta ahora"
       : "<b>" + total + "</b> ofertas"
         + (ofertas.length !== total ? " (de " + ofertas.length + " encontradas)" : "")
+        + (filtrandoCats ? " · " + catsALaVista() + " de " + catsDeLasOfertas().length
+                            + " categorías a la vista" : "")
         + (paginas > 1 ? " · mostrando " + (desde + 1) + "-" + hasta : "");
 
     if(!total){
       cont.innerHTML = ofBuscando ? "" :
-        '<div class="sin-nada">Nada por acá. Probá con otras categorías, bajá el descuento'
-        + ' mínimo o prendé el selector de Tarjeta / Cuenta Digital.</div>';
+        (filtrandoCats
+          ? '<div class="sin-nada">Ninguna oferta en las categorías que dejaste a la vista.'
+            + ' Tocá <b>Categorías</b> arriba y marcá otras.</div>'
+          : '<div class="sin-nada">Nada por acá. Probá con otras categorías, bajá el descuento'
+            + ' mínimo o prendé el selector de Tarjeta / Cuenta Digital.</div>');
       $("ofPaginas").classList.add("oculto");
       return;
     }
@@ -1709,12 +2201,14 @@
     var barra = $("ofPaginas");
     barra.classList.toggle("oculto", paginas <= 1);
     if(paginas <= 1) return;
+    // .pg-ext: "Primera" y "Última" se esconden en el celular, donde lo único
+    // que se usa con el pulgar es anterior / siguiente.
     barra.innerHTML =
-        '<button data-pag="1"' + (ofPagina === 1 ? " disabled" : "") + '>« Primera</button>'
+        '<button class="pg-ext" data-pag="1"' + (ofPagina === 1 ? " disabled" : "") + '>« Primera</button>'
       + '<button data-pag="' + (ofPagina - 1) + '"' + (ofPagina === 1 ? " disabled" : "") + '>‹ Anterior</button>'
       + '<span class="cual">Página <b>' + ofPagina + '</b> de ' + paginas + '</span>'
       + '<button data-pag="' + (ofPagina + 1) + '"' + (ofPagina === paginas ? " disabled" : "") + '>Siguiente ›</button>'
-      + '<button data-pag="' + paginas + '"' + (ofPagina === paginas ? " disabled" : "") + '>Última »</button>';
+      + '<button class="pg-ext" data-pag="' + paginas + '"' + (ofPagina === paginas ? " disabled" : "") + '>Última »</button>';
 
     Array.prototype.forEach.call(barra.querySelectorAll("[data-pag]"), function(b){
       b.onclick = function(){
@@ -1726,7 +2220,14 @@
   }
 
   // Cualquier filtro que cambie vuelve a arrancar desde la primera página.
-  function refiltrarOfertas(){ ofPagina = 1; pintarOfertas(); }
+  // Si el panel de categorías está abierto se repinta: los contadores de cada
+  // una dependen de los otros filtros.
+  function refiltrarOfertas(){
+    ofPagina = 1;
+    pintarOfertas();
+    if(catsAbierto) pintarCatsVista();
+    else            actualizarChipCats();
+  }
 
   // ---- Un color por subcategoría ----
   // El mismo rubro tiene que dar SIEMPRE el mismo color, así que sale de un
@@ -1830,6 +2331,14 @@
     $("btnPlegar").setAttribute("aria-expanded", abrir ? "true" : "false");
   }
 
+  // Lo mismo para el panel de categorías del explorador: se pliega apenas hay
+  // ofertas en pantalla, que es lo que se vino a mirar.
+  function plegarOf(abrir){
+    $("ofPanelCats").classList.toggle("abierto", abrir);
+    $("ofCuerpoCats").classList.toggle("oculto", !abrir);
+    $("ofBtnPlegar").setAttribute("aria-expanded", abrir ? "true" : "false");
+  }
+
   function aviso(txt){ $("estado").textContent = txt; }
 
   // ------------------------------------------------------------------
@@ -1865,19 +2374,31 @@
          + " a las " + hora;
   }
 
+  // Treinta categorías escritas una atrás de la otra ocupaban media pantalla
+  // del celular antes de la primera oferta. Se muestran tres y el resto queda
+  // en el title, que es donde no molesta.
+  function resumirCats(txt){
+    var t = String(txt || "").split(",").map(function(x){ return x.trim(); })
+                             .filter(function(x){ return x; });
+    if(t.length <= 3) return t.join(", ");
+    return t.slice(0, 3).join(", ") + " y " + (t.length - 3) + " más";
+  }
+
   // El cartel azul arriba de los resultados. Con iso vacío se esconde: eso pasa
   // cuando lo que se ve es una búsqueda recién hecha y no hace falta aclarar nada.
-  function avisoGuardado(cual, iso, detalle){
+  function avisoGuardado(cual, iso, detalle, completo){
     var caja = $(cual === "ofertas" ? "ofAvisoGuardado" : "avisoGuardado");
     if(!iso){ caja.classList.add("oculto"); return; }
     // Pasado un día, los precios de Carrefour bien pueden haber cambiado.
     var viejo = (Date.now() - new Date(iso).getTime()) > 24 * 3600 * 1000;
     caja.classList.remove("oculto");
     caja.classList.toggle("viejo", viejo);
-    caja.querySelector(".g-txt").innerHTML =
+    var txt = caja.querySelector(".g-txt");
+    txt.innerHTML =
         "Esto es lo <b>guardado " + esc(cuandoLindo(iso)) + "</b>"
       + (detalle ? " · " + esc(detalle) : "")
       + (viejo ? " · pasó más de un día, los precios pueden haber cambiado" : "");
+    txt.title = completo || "";
   }
 
   // ¿El JSON guardado tiene algo que valga la pena mostrar?
@@ -1910,17 +2431,24 @@
     if(O && O.items && O.items.length){
       ofertas = O.items;
       ofUsado = true;
+      reiniciarCatsVista();             // el filtro de mirar arranca en "todas"
       $("ofToolbar").classList.remove("oculto");
       $("ofResumen").classList.remove("oculto");
+      plegarOf(false);                  // ya hay ofertas: lo que importa es verlas
       pintarOfertas();
       avisoGuardado("ofertas", O.guardado,
-                    O.items.length + " ofertas" + (O.cats ? " · " + O.cats : ""));
+                    O.items.length + " ofertas" + (O.cats ? " · " + resumirCats(O.cats) : ""),
+                    O.cats || "");
       algo = true;
     }
 
-    // El chip de vigencia del encabezado habla de la pantalla que estás
-    // mirando, y al abrir siempre es "Mi lista".
+    // El chip de vigencia del encabezado habla de la pantalla que estás mirando.
     pintarVigencia(resultados.map(function(r){ return r.principal; }));
+
+    // Si lo único guardado son las ofertas, se abre ahí: quedarse en "Mi lista"
+    // mirando una pantalla vacía no le sirve a nadie, y menos en el celular.
+    // vista() repinta la vigencia, así que va después.
+    if(!resultados.length && ofUsado) vista("ofertas");
     if(algo) aviso("Mostrando la última búsqueda guardada.");
     return algo;
   }
@@ -1997,10 +2525,6 @@
       $("ofSalida").innerHTML = '<div class="sin-nada">Este archivo no trae ofertas guardadas. '
                               + 'Se guardan al buscarlas desde la computadora.</div>';
     }
-    // Si lo único guardado son las ofertas, se abre ahí directamente: quedarse
-    // en "Mi lista" mostrando un cartel de "acá no hay nada" no tiene sentido.
-    if(!resultados.length && ofUsado) vista("ofertas");
-
     // La fecha del cartel es la más reciente de las dos partes (formato ISO:
     // ordenar como texto alcanza).
     var fechas = [d.lista && d.lista.guardado, d.ofertas && d.ofertas.guardado]
@@ -2108,6 +2632,25 @@
     $("lightbox").classList.remove("oculto");
   });
   $("lightbox").onclick = function(){ $("lightbox").classList.add("oculto"); };
+
+  // ---------- La barra de filtros se aparta mientras mirás (sólo celular) ----------
+  // Ocupa tres renglones y en una pantalla chica es mucho. Se esconde al bajar
+  // y vuelve al subir, que es el gesto natural para ir a buscar un filtro.
+  // Sólo cuando ya está pegada arriba: moverla desde su lugar se vería como un salto.
+  var scrollPrevio = 0;
+  window.addEventListener("scroll", function(){
+    if(window.innerWidth > 720) return;
+    var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var d = y - scrollPrevio;
+    if(Math.abs(d) < 6) return;
+    scrollPrevio = y;
+    if(d < 0){ document.body.classList.remove("bajando"); return; }
+    if(catsAbierto) return;            // estás eligiendo categorías: no se mueve
+    var esOf = !$("vistaOfertas").classList.contains("oculto");
+    var barra = esOf ? $("ofToolbar") : $("toolbar");
+    if(barra.classList.contains("oculto")) return;
+    if(barra.getBoundingClientRect().top <= 1) document.body.classList.add("bajando");
+  }, { passive:true });
   document.addEventListener("keydown", function(e){
     if(e.key === "Escape") $("lightbox").classList.add("oculto");
   });
@@ -2148,6 +2691,8 @@
   $("ofAvisoGuardado").querySelector(".g-borrar").onclick = function(){
     ofertas = [];
     ofUsado = false;
+    reiniciarCatsVista();
+    plegarOf(true);           // sin nada que mirar, vuelve a mandar el buscador
     guardarSesion("ofertas", null);
     avisoGuardado("ofertas", null);
     $("ofSalida").innerHTML = "";
@@ -2161,7 +2706,7 @@
   Array.prototype.forEach.call(document.querySelectorAll(".chip[data-f]"), function(c){
     c.onclick = function(){ filtro = c.getAttribute("data-f"); render(); };
   });
-  $("buscador").oninput = function(){ texto = this.value.trim().toLowerCase(); render(); };
+  $("buscador").oninput = function(){ texto = normTxt(this.value.trim()); render(); };
 
   // El selector de Tarjeta esta duplicado (una copia en cada pantalla) pero la
   // verdad es una sola: incluirTarjeta. Cambiar cualquiera actualiza el otro.
@@ -2178,7 +2723,9 @@
       r.alternativas = porPrecio(r.alternativas);
     });
     render();
-    pintarOfertas();
+    // Cambia qué cuenta como oferta, así que cambian los contadores por
+    // categoría: si el panel está abierto, se repinta.
+    refiltrarOfertas();
   }
   $("chkTarjeta").onchange   = function(){ setTarjeta(this.checked); };
   $("ofChkTarjeta").onchange = function(){ setTarjeta(this.checked); };
@@ -2193,6 +2740,27 @@
   $("ofFiltroCat").oninput = filtrarCategorias;
   $("ofTodas").onclick    = function(){ marcarTodas(true); };
   $("ofNinguna").onclick  = function(){ marcarTodas(false); };
+  $("ofBtnPlegar").onclick = function(){
+    plegarOf(!$("ofPanelCats").classList.contains("abierto"));
+  };
+
+  // ---------- Filtro temporal de categorías ----------
+  $("ofBtnCats").onclick   = function(){ abrirCatsVista(); };
+  $("ofBuscarCat").oninput = filtrarCatsVista;
+  $("ofVerTodas").onclick  = function(){
+    catsOcultas = {};
+    pintarCatsVista();
+    ofPagina = 1;
+    pintarOfertas();
+  };
+  $("ofVerNinguna").onclick = function(){
+    // Todo apagado: sirve para después prender una sola con el tilde.
+    catsOcultas = {};
+    catsDeLasOfertas().forEach(function(k){ catsOcultas[k] = true; });
+    pintarCatsVista();
+    ofPagina = 1;
+    pintarOfertas();
+  };
   $("ofCancelar").onclick = function(){
     ofCancelado = true;
     $("ofCargaTxt").textContent = "Cancelando…";
