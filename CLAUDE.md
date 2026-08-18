@@ -31,6 +31,7 @@ que la página. Por eso el problema de CORS desapareció por completo.
 | `articulos.txt` | Lista editable. Python la lee al arrancar y el botón "Guardar lista" la reescribe. Un artículo por línea; `#` al principio = comentario. |
 | `categorias.txt` | Categorías marcadas en el explorador de ofertas. Lo escribe el botón "Guardar selección"; se puede editar a mano. Se crea recién la primera vez que guardás. |
 | `ultima-busqueda.json` | **La última búsqueda de cada pantalla**, para no repetirla al volver a abrir. Lo escribe Python solo, al terminar cada búsqueda. Borrarlo a mano equivale a "Descartar". Es también el archivo que se sube al hosting junto al HTML para mirar desde el celular. Ver "Los resultados quedan guardados" y "Modo lectura". |
+| `ultima-busqueda.js` | **El gemelo del anterior**, con el mismo contenido envuelto en `window.ULTIMA_BUSQUEDA = …`. Lo escribe Python al mismo tiempo. Existe sólo porque con doble clic (`file://`) el navegador no deja leer el `.json` pero sí un `<script>`. Ver "Modo lectura". |
 | `CARRITO_OFERTA_JULIO2026.txt` | Lista original de julio 2026. Referencia, no la lee el programa. |
 | `*.pdf` | Comprobantes sueltos, sin relación con esta herramienta. |
 
@@ -247,9 +248,11 @@ Un solo JSON con dos partes independientes, cada una con su marca de tiempo:
 
 - `guardar_sesion(parte, datos)` **reemplaza una parte y deja la otra como estaba**:
   volver a buscar la lista no borra las ofertas que tardaron minutos. Con `datos=None`
-  esa parte se borra; si no queda ninguna, se borra el archivo.
-- Se escribe en `ultima-busqueda.json.tmp` y recién ahí se hace `os.replace()`. Si el
-  programa se corta en el medio, queda el archivo viejo entero y no uno a la mitad.
+  esa parte se borra; si no queda ninguna, se borran los archivos.
+- Se escribe en `<archivo>.tmp` y recién ahí se hace `os.replace()` (`_escribir_atomico`).
+  Si el programa se corta en el medio, queda el archivo viejo entero y no uno a la mitad.
+- Se escriben **dos** archivos con el mismo contenido, `.json` y `.js`. El segundo es para
+  el modo lectura con doble clic; ver esa sección.
 - Hay `SESION_LOCK` porque el servidor es threading.
 - Si el archivo está corrupto, `leer_sesion()` devuelve `{}`: se arranca en blanco,
   nunca se rompe.
@@ -287,20 +290,56 @@ ultima-busqueda.json        ← el que ya escribe Python en la carpeta
 Nada más: ni Python, ni el `.bat`, ni `articulos.txt`. La página detecta sola que no hay
 servidor y entra en **modo lectura**.
 
+### El archivo gemelo `ultima-busqueda.js` — y por qué existe
+
+**Con doble clic (`file://`) el navegador PROHÍBE leer el `.json` de al lado**, aunque
+esté justo ahí:
+
+```
+Access to fetch at 'file:///…/ultima-busqueda.json' from origin 'null'
+has been blocked by CORS policy: Cross origin requests are only supported
+for protocol schemes: … http, https …
+```
+
+Es el mismo CORS de siempre, ahora sobre un archivo local. Pero **un `<script src>` sí
+carga** desde `file://`. Por eso `guardar_sesion()` escribe **los dos archivos a la vez**,
+con el mismo contenido:
+
+| Archivo | Contenido | Para qué |
+|---|---|---|
+| `ultima-busqueda.json` | `{…}` | Lo que lee Python; lo que se sube a un hosting. |
+| `ultima-busqueda.js` | `window.ULTIMA_BUSQUEDA = {…};` | Lo único que el navegador deja leer con doble clic. |
+
+Los escribe `_volcar_sesion(d)` (un `json.dumps` y dos `_escribir_atomico`), y `guardar_sesion`
+con `datos=None` **borra los dos**. `sincronizar_js()` corre al arrancar `main()` y genera
+el `.js` si hay un `.json` de una versión anterior que todavía no lo tiene, así el modo
+lectura funciona sin tener que rebuscar nada.
+
+> El gemelo **duplica el tamaño en disco** (3 MB → 6 MB). Es a propósito y es el precio de
+> que el doble clic funcione. Al hosting se puede subir sólo el `.json`.
+
 ### Cómo decide
 
 En el arranque, si `/api/ping` falla (no hay Python), **antes** de dar por perdida la
-pantalla se prueba `fetch("ultima-busqueda.json")` **relativo a la página**:
+pantalla se prueban las dos fuentes, **en este orden** y con rutas relativas a la página:
 
-| Ping | JSON al lado | Qué pasa |
+1. `leerScriptSesion()` — inyecta `<script src="ultima-busqueda.js">` y espera
+   `window.ULTIMA_BUSQUEDA`. Es el que salva el doble clic.
+2. `leerJsonSesion()` — `fetch("ultima-busqueda.json")`. Es el que salva el hosting
+   donde subiste sólo dos archivos.
+
+Alcanza con que ande uno (`leerArchivoSesion()` encadena el segundo en el `catch` del
+primero).
+
+| Ping | Archivo al lado | Qué pasa |
 |---|---|---|
 | ✅ | — | Normal de siempre: `cargarArchivo()` + `recuperarSesion()`. |
-| ❌ | ✅ con datos | **Modo lectura**: `entrarModoLectura(d)`. |
-| ❌ | ❌ | El cartel `#sinServidor` de siempre (cómo encender el `.bat`). |
+| ❌ | `.js` o `.json` con datos | **Modo lectura**: `entrarModoLectura(d)`. |
+| ❌ | ninguno | El cartel `#sinServidor` (cómo encender el `.bat`, o abrir el JSON a mano). |
 
-La ruta del JSON es **relativa** a propósito: así funciona igual en la raíz del dominio
-que en un subdirectorio. Va con `cache:"no-store"`, si no el celular sigue mostrando el
-JSON de la semana pasada después de subir uno nuevo.
+Las rutas son **relativas** a propósito: así funciona igual en la raíz del dominio que en
+un subdirectorio. El `.json` va con `cache:"no-store"` y el `.js` con `?t=<ahora>`; si no,
+el celular sigue mostrando lo de la semana pasada después de subir algo nuevo.
 
 ### Qué se apaga
 
@@ -327,10 +366,9 @@ igual.
 
 ### El botón "Abrir un ultima-busqueda.json…"
 
-Abrir el HTML con **doble clic** (`file://`) **no** entra en modo lectura solo: el
-navegador bloquea leer el archivo de al lado (origen `null`). Por eso el cartel
-`#sinServidor` tiene un `<input type="file">`: elegís el JSON a mano y la pantalla se
-arma igual. Sirve también si te pasaste el archivo al celular por mail o WhatsApp.
+Última red: el cartel `#sinServidor` tiene un `<input type="file">` para elegir el JSON a
+mano. Con el gemelo `.js` en la carpeta ya casi no hace falta, pero sirve si te pasaste el
+archivo al celular por mail o WhatsApp, suelto y sin el HTML al lado.
 
 > **Refactor que esto trajo:** `recuperarSesion()` se partió en `pintarSesion(d)` (rearma
 > la pantalla con un JSON, venga de donde venga) y `recuperarSesion()` (lo pide a
@@ -832,6 +870,10 @@ Detalles que muerden:
   "funciona pero los resultados no son precisos" de la v1.
 - **`/checkout/cart/add` con listas separadas por coma** (`sku=1,2&qty=1,1`) → **HTTP 400**.
   Hay que repetir `sku`/`qty`/`seller` una vez por artículo.
+- **`fetch("ultima-busqueda.json")` con el HTML abierto por doble clic** (`file://`) →
+  bloqueado por CORS, origen `null`, aunque el archivo esté en la misma carpeta. **No es
+  un problema de ruta y no se arregla cambiándola.** La salida fue el gemelo
+  `ultima-busqueda.js` cargado con `<script src>`, que sí está permitido.
 
 ## Ideas pendientes (no pedidas todavía)
 

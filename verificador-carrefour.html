@@ -449,8 +449,11 @@
       </div>
       <p class="fino-nota">
         Si sólo querés <b>mirar la última búsqueda</b> (por ejemplo desde el celular), no hace
-        falta el programa: alcanza con que el archivo <code>ultima-busqueda.json</code> esté
-        al lado de esta página. Acá no se encontró ninguno. También podés abrirlo a mano:
+        falta el programa: alcanza con que al lado de esta página esté
+        <code>ultima-busqueda.js</code> (para abrir con doble clic) o
+        <code>ultima-busqueda.json</code> (si está subida a un hosting). Acá no se encontró
+        ninguno de los dos. Los escribe el programa al terminar una búsqueda; también podés
+        abrir el archivo a mano:
       </p>
       <div class="fila" style="margin-top:10px">
         <button class="btn-s" id="btnElegirJson">Abrir un ultima-busqueda.json…</button>
@@ -689,6 +692,7 @@
   // ------------------------------------------------------------------
   var soloLectura = false;
   var ARCHIVO_SESION = "ultima-busqueda.json";
+  var ARCHIVO_SESION_JS = "ultima-busqueda.js";
 
   // ------------------------------------------------------------------
   // Todo pasa por el servidor local de Python (mismo origen).
@@ -1932,12 +1936,38 @@
   // Es lo que permite subir la carpeta a un hosting y mirar desde el celular
   // la búsqueda que se hizo en la computadora.
   // ------------------------------------------------------------------
-  function leerArchivoSesion(){
+  // Camino 1: el gemelo .js, cargado con un <script src>.
+  //
+  // Es feo pero es el ÚNICO que funciona con doble clic (file://): ahí el
+  // navegador prohíbe leer el .json de al lado —"blocked by CORS policy, origin
+  // null"— aunque el archivo esté justo ahí. Un <script> sí carga. Python
+  // escribe los dos archivos a la vez, con el mismo contenido.
+  function leerScriptSesion(){
+    return new Promise(function(listo, falló){
+      var s = document.createElement("script");
+      s.src = ARCHIVO_SESION_JS + "?t=" + Date.now();   // sin caché vieja
+      s.onload = function(){
+        if(window.ULTIMA_BUSQUEDA) listo(window.ULTIMA_BUSQUEDA);
+        else falló(new Error("el archivo cargó pero está vacío"));
+      };
+      s.onerror = function(){ falló(new Error("no está " + ARCHIVO_SESION_JS)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  // Camino 2: el .json directo. Anda en cualquier hosting (http/https), que es
+  // donde el gemelo .js puede no estar si subiste sólo dos archivos.
+  function leerJsonSesion(){
     // Sin caché: si desde la PC subís un JSON nuevo, el celular tiene que verlo.
     return fetch(ARCHIVO_SESION, { cache:"no-store" }).then(function(r){
       if(!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     });
+  }
+
+  // Se prueban los dos, en ese orden. Alcanza con que ande uno.
+  function leerArchivoSesion(){
+    return leerScriptSesion().then(null, function(){ return leerJsonSesion(); });
   }
 
   function entrarModoLectura(d){

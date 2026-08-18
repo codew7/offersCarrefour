@@ -34,6 +34,11 @@ CATS = os.path.join(CARPETA, "categorias.txt")   # seleccion del explorador de o
 # Ultima busqueda hecha. Buscar es lento, asi que el resultado queda en disco y
 # sobrevive tanto a cerrar el navegador como a cerrar la ventana negra.
 SESION = os.path.join(CARPETA, "ultima-busqueda.json")
+# El mismo contenido, envuelto como javascript. Existe por una sola razon: si
+# abris el HTML con doble clic (file://) el navegador PROHIBE leer el .json de
+# al lado, pero un <script src="..."> si carga. Con esto el modo lectura anda
+# tambien sin servidor y sin hosting. Ver "Modo lectura" en CLAUDE.md.
+SESION_JS = os.path.join(CARPETA, "ultima-busqueda.js")
 
 PUERTO_PREFERIDO = 8765
 BASE = "https://www.carrefour.com.ar"
@@ -687,6 +692,43 @@ def leer_sesion():
         return {}          # archivo a medio escribir o ilegible: como si no hubiera
 
 
+def _escribir_atomico(ruta, texto):
+    """Se escribe en un temporal y recien ahi se reemplaza: si el programa se
+    corta en el medio, queda el archivo viejo entero y no uno a la mitad."""
+    tmp = ruta + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(texto)
+    os.replace(tmp, ruta)
+
+
+def _borrar(ruta):
+    try:
+        os.remove(ruta)
+    except OSError:
+        pass
+
+
+def _volcar_sesion(d):
+    """Deja lo guardado en los dos archivos gemelos: el .json (que es el que
+    lee este programa y el que se sube a un hosting) y el .js (que es el unico
+    que el navegador deja leer cuando abris el HTML con doble clic)."""
+    crudo = json.dumps(d, ensure_ascii=False)
+    _escribir_atomico(SESION, crudo)
+    _escribir_atomico(SESION_JS, "window.ULTIMA_BUSQUEDA = %s;\n" % crudo)
+
+
+def sincronizar_js():
+    """Al arrancar: si hay un .json de una version anterior y todavia no existe
+    su .js, se genera. Asi el modo lectura funciona sin tener que rebuscar."""
+    if os.path.exists(SESION) and not os.path.exists(SESION_JS):
+        d = leer_sesion()
+        if d:
+            try:
+                _volcar_sesion(d)
+            except OSError:
+                pass       # carpeta de solo lectura: se sigue igual, sin el gemelo
+
+
 def guardar_sesion(parte, datos):
     """Reemplaza UNA parte ('lista' u 'ofertas') y deja la otra como estaba.
     Con datos=None esa parte se borra. Devuelve la marca de tiempo guardada."""
@@ -707,18 +749,11 @@ def guardar_sesion(parte, datos):
             d[parte] = datos
 
         if not d:
-            try:
-                os.remove(SESION)
-            except OSError:
-                pass
+            _borrar(SESION)
+            _borrar(SESION_JS)
             return cuando
 
-        # Se escribe en un temporal y recien ahi se reemplaza: si el programa se
-        # corta en el medio, queda el archivo viejo entero y no uno a la mitad.
-        tmp = SESION + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(d, f, ensure_ascii=False)
-        os.replace(tmp, SESION)
+        _volcar_sesion(d)
         return cuando
 
 
@@ -951,6 +986,8 @@ def main():
         print("ERROR: falta 'verificador-carrefour.html' en", CARPETA)
         input("Enter para salir...")
         return
+
+    sincronizar_js()      # que el modo lectura ande aunque no rebusques nada
 
     puerto = elegir_puerto()
     url = "http://127.0.0.1:%d/" % puerto
