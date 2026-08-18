@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Precios y ofertas · Carrefour AR</title>
+<style>
+  :root{
+    --azul:#004E9F; --azul-osc:#003b78; --azul-claro:#e8f0fa;
+    --rojo:#E30613; --naranja:#FF6600; --verde:#0a8754; --amarillo:#b58900;
+    --fondo:#f2f5f9; --linea:#e2e8f0; --texto:#111827; --tenue:#64748b;
+    --sombra:0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.06);
+    --sombra-alta:0 4px 10px rgba(16,24,40,.08), 0 12px 28px rgba(16,24,40,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       background:var(--fondo);color:var(--texto);font-size:15px;line-height:1.45}
+  .oculto{display:none !important}
+
+  /* ---------- Barra de progreso global ---------- */
+  #progreso{position:fixed;top:0;left:0;height:3px;width:0;z-index:60;
+            background:linear-gradient(90deg,var(--azul),var(--naranja));
+            transition:width .25s ease;opacity:0}
+  #progreso.activo{opacity:1}
+
+  /* ---------- Encabezado ---------- */
+  header{background:var(--azul);color:#fff;padding:14px 22px;
+         display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  header h1{margin:0;font-size:17px;font-weight:700;letter-spacing:-.2px}
+  #estado{font-size:12.5px;color:#cfe0f5;min-height:18px}
+  .vigencia{font-size:12.5px;font-weight:650;background:rgba(255,255,255,.15);
+            color:#fff;border-radius:999px;padding:4px 12px;cursor:help;
+            white-space:nowrap}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:18px 20px 40px}
+
+  /* ---------- Paneles ---------- */
+  .panel{background:#fff;border-radius:14px;box-shadow:var(--sombra);margin-bottom:16px;overflow:hidden}
+  .panel-cuerpo{padding:16px}
+  .ayuda{font-size:13px;color:var(--tenue);margin:0 0 10px}
+  .ayuda b{color:var(--texto)}
+  .ayuda-mas{border:0;padding:0;margin:0 0 12px}
+  .ayuda-mas > summary{font-size:12.5px;color:var(--azul);font-weight:600}
+  .ayuda-cuerpo{font-size:13px;color:var(--tenue);line-height:1.55;
+                background:#f8fafc;border-radius:10px;padding:12px 14px;margin-top:9px}
+  .ayuda-cuerpo p{margin:0 0 9px}
+  .ayuda-cuerpo p:last-child{margin-bottom:0}
+  .ayuda-cuerpo b{color:var(--texto)}
+  .ayuda-cuerpo ul{margin:0 0 9px;padding-left:18px}
+  .ayuda-cuerpo li{margin-bottom:4px}
+  .ayuda-cuerpo .ejemplo{text-align:center;margin:10px 0}
+  .ayuda-cuerpo .fino{font-size:12px;border-top:1px solid var(--linea);padding-top:9px}
+  code{background:#eef2f7;padding:1px 6px;border-radius:5px;font-size:12.5px;
+       font-family:ui-monospace,Consolas,monospace}
+
+  /* Cabecera plegable de la lista */
+  .plegable{display:flex;align-items:center;gap:12px;width:100%;background:#fff;border:0;
+            padding:14px 16px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+  .plegable:hover{background:#f8fafc}
+  .plegable .flecha{transition:transform .2s;color:var(--tenue);font-size:12px}
+  .panel.abierto .plegable .flecha{transform:rotate(90deg)}
+  .plegable b{font-size:15px;font-weight:650}
+  .plegable .cuenta{margin-left:auto;font-size:13px;color:var(--tenue);white-space:nowrap}
+
+  textarea{width:100%;height:180px;padding:12px;border:1px solid var(--linea);border-radius:10px;
+           font-family:ui-monospace,Consolas,monospace;font-size:13px;resize:vertical;background:#fcfdfe}
+  textarea:focus,input:focus{outline:2px solid var(--azul);outline-offset:1px;border-color:transparent}
+
+  .fila{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  button{border:0;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;
+         font-family:inherit;transition:background .15s,box-shadow .15s,transform .08s}
+  button:active{transform:translateY(1px)}
+  .btn-p{background:var(--azul);color:#fff;box-shadow:0 2px 8px rgba(0,78,159,.28)}
+  .btn-p:hover{background:var(--azul-osc)}
+  .btn-s{background:#fff;color:var(--azul);box-shadow:inset 0 0 0 1px var(--linea)}
+  .btn-s:hover{background:var(--azul-claro)}
+  .btn-mini{background:#fff;color:var(--azul);box-shadow:inset 0 0 0 1px var(--linea);
+            padding:6px 12px;font-size:12.5px;border-radius:8px}
+  .btn-mini:hover{background:var(--azul-claro)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+
+  /* ---------- Barra de herramientas ---------- */
+  .toolbar{position:sticky;top:0;z-index:50;background:rgba(242,245,249,.92);
+           backdrop-filter:blur(8px);padding:12px 0 10px;margin-bottom:6px;
+           border-bottom:1px solid var(--linea)}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+  .kpi{background:#fff;border-radius:12px;box-shadow:var(--sombra);padding:9px 15px;
+       display:flex;align-items:baseline;gap:8px;flex:1;min-width:132px}
+  .kpi b{font-size:21px;font-weight:750;line-height:1}
+  .kpi span{font-size:12px;color:var(--tenue)}
+  .kpi.destacado{background:linear-gradient(135deg,#fff5f5,#fff);box-shadow:inset 0 0 0 1px #fbd5d5,var(--sombra)}
+  .kpi.destacado b{color:var(--verde)}
+
+  .controles{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip{background:#fff;border-radius:999px;padding:7px 15px;font-size:13px;cursor:pointer;
+        user-select:none;box-shadow:inset 0 0 0 1px var(--linea);transition:all .15s;white-space:nowrap}
+  .chip:hover{box-shadow:inset 0 0 0 1px var(--azul);color:var(--azul)}
+  .chip.on{background:var(--azul);color:#fff;box-shadow:none;font-weight:600}
+  .chip .n{opacity:.6;font-size:12px;margin-left:5px}
+  .chip.on .n{opacity:.85}
+  .chip.vacio{opacity:.4;pointer-events:none}
+
+  .switch{display:flex;align-items:center;gap:9px;background:#fff;border-radius:999px;
+          padding:6px 15px 6px 10px;font-size:13px;cursor:pointer;user-select:none;
+          box-shadow:inset 0 0 0 1px var(--linea);margin-left:auto;transition:all .15s}
+  .switch:hover{box-shadow:inset 0 0 0 1px var(--azul)}
+  /* Amarillo, igual que las promos de Tarjeta / Cuenta que este switch habilita. */
+  .switch.on{background:#fff8e1;box-shadow:inset 0 0 0 1px var(--amarillo);
+             color:var(--amarillo);font-weight:600}
+  .switch .pista{width:34px;height:19px;border-radius:999px;background:#cbd5e1;position:relative;
+                 transition:background .2s;flex-shrink:0}
+  .switch .pista::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;
+                        border-radius:50%;background:#fff;transition:transform .2s;
+                        box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .switch.on .pista{background:var(--amarillo)}
+  .switch.on .pista::after{transform:translateX(15px)}
+  .switch input{position:absolute;opacity:0;pointer-events:none}
+
+  .buscador{position:relative}
+  .buscador input{padding:8px 30px 8px 14px;border-radius:999px;border:0;font-size:13px;
+                  box-shadow:inset 0 0 0 1px var(--linea);min-width:190px;font-family:inherit;background:#fff}
+  .buscador .limpiar{position:absolute;right:4px;top:50%;transform:translateY(-50%);
+                     background:none;box-shadow:none;color:var(--tenue);padding:4px 8px;font-size:15px}
+
+  /* ---------- Grilla de resultados ---------- */
+  /* Un artículo debajo del otro, siempre. Lo pidió el usuario. */
+  .grid{display:grid;grid-template-columns:1fr;gap:12px;align-items:start}
+  .grupo{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:14px 0 0;
+         font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.7px;color:var(--tenue)}
+  .grupo::after{content:"";flex:1;height:1px;background:var(--linea)}
+  .grupo:first-child{margin-top:0}
+
+  /* Una sola columna: la tarjeta se lee de izquierda a derecha.
+     Izquierda = qué es. Derecha = cuánto sale y qué hacés con eso.
+     Abajo, a todo lo ancho, los desplegables. */
+  .card{background:#fff;border-radius:14px;box-shadow:var(--sombra);padding:16px 18px;
+        display:grid;grid-template-columns:minmax(0,1fr) 320px;
+        column-gap:22px;row-gap:12px;align-items:start;position:relative;
+        transition:box-shadow .18s}
+  .card:hover{box-shadow:var(--sombra-alta)}
+  .izq{min-width:0;display:flex;flex-direction:column;gap:11px}
+  .der{display:flex;flex-direction:column;gap:10px;
+       background:#f8fafc;border-radius:12px;padding:13px 14px}
+  .pie{grid-column:1/-1;display:flex;flex-direction:column;gap:9px}
+  @media (max-width:820px){
+    .card{grid-template-columns:1fr;padding:14px}
+    .der{padding:12px}
+  }
+  .card.oferta::after{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;
+                      border-radius:0 3px 3px 0;background:var(--verde)}
+  .card.oferta.tarj::after{background:var(--amarillo)}
+  /* La tarjeta "sin resultados" no tiene columna derecha: va a todo lo ancho. */
+  .card.error{background:#fbfcfd;grid-template-columns:1fr;row-gap:9px}
+
+  .flag{position:absolute;top:-7px;right:12px;background:var(--verde);color:#fff;font-size:10.5px;
+        font-weight:750;letter-spacing:.6px;padding:3px 9px;border-radius:999px;
+        box-shadow:0 2px 6px rgba(10,135,84,.35)}
+  .flag.tarj{background:var(--amarillo);box-shadow:0 2px 6px rgba(181,137,0,.35)}
+
+  .buscado{font-size:11px;color:var(--tenue);text-transform:uppercase;letter-spacing:.4px;
+           display:flex;align-items:center;gap:7px}
+  .buscado .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .match{margin-left:auto;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:750;
+         flex-shrink:0;cursor:help}
+  .m-alta{background:#e6f4ea;color:var(--verde)}
+  .m-media{background:#fff8e1;color:var(--amarillo)}
+  .m-baja{background:#fdecea;color:var(--rojo)}
+
+  .cuerpo{display:flex;gap:14px;align-items:center}
+  .thumb{width:84px;height:84px;object-fit:contain;border-radius:10px;flex-shrink:0;
+         background:#f8fafc;cursor:zoom-in}
+  .datos{flex:1;min-width:0}
+  .nombre{font-weight:650;font-size:16px;line-height:1.3}
+  .nombre a{color:var(--texto);text-decoration:none}
+  .nombre a:hover{color:var(--azul);text-decoration:underline}
+  .precios{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .precio{font-size:27px;font-weight:750;letter-spacing:-.6px;line-height:1.1}
+  .precio.rebajado{color:var(--verde)}
+  .cu{font-size:12px;color:var(--tenue);font-weight:650;margin-left:-4px}
+  .xu{font-size:12px;color:var(--tenue);font-weight:600;cursor:help;
+      background:#f1f5f9;border-radius:6px;padding:2px 7px}
+  .rinde{font-size:12.5px;background:#eef6ff;color:var(--azul-osc);border-radius:9px;
+         padding:7px 10px;box-shadow:inset 0 0 0 1px #cfe3f7}
+  .rinde b{font-weight:700}
+  .rinde.propio{background:#e6f4ea;color:var(--verde);box-shadow:inset 0 0 0 1px #a9dcc4}
+  .rinde .vs{color:var(--tenue);font-weight:600}
+  .alt.rinde-mas{background:#f2f9f5;box-shadow:inset 0 0 0 1px #cbe8d8}
+  .calc{font-size:12.5px;color:var(--verde);background:#e6f4ea;
+        border-radius:8px;padding:5px 9px}
+  .calc b{font-weight:750}
+  .tachado{font-size:13px;color:var(--tenue);text-decoration:line-through}
+  .off{background:var(--verde);color:#fff;border-radius:6px;padding:2px 7px;font-size:11.5px;font-weight:750}
+  .agotado{background:#eef2f7;color:var(--tenue);border-radius:6px;padding:2px 8px;font-size:11.5px;font-weight:650}
+
+  .promos{display:flex;gap:6px;flex-wrap:wrap}
+  .promo{background:#fff3e0;color:#a34400;border-radius:7px;padding:4px 10px;font-size:12px;
+         font-weight:600;box-shadow:inset 0 0 0 1px #ffd7ab}
+  /* Sólo se dibujan cuando el selector esta prendido; por eso una sola variante. */
+  .promo.tarjeta.on{background:#fff8e1;color:var(--amarillo);box-shadow:inset 0 0 0 1px #ead9a0}
+  .regular{font-size:12.5px;color:var(--tenue)}
+
+  /* ---------- Acordeones dentro de la tarjeta ---------- */
+  details{border-top:1px solid var(--linea);padding-top:9px}
+  summary{font-size:12.5px;color:var(--azul);cursor:pointer;font-weight:600;
+          list-style:none;display:flex;align-items:center;gap:6px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"›";font-size:15px;transition:transform .18s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:hover{color:var(--azul-osc)}
+
+  .alts{margin-top:9px;max-height:420px;overflow:auto}
+  .alt{display:flex;gap:12px;align-items:center;font-size:13.5px;padding:8px 8px;border-radius:8px}
+  .alt:hover{background:#f8fafc}
+  .alt + .alt{border-top:1px solid #f1f5f9}
+  .alt-thumb{width:40px;height:40px;object-fit:contain;border-radius:8px;flex-shrink:0;
+             background:#f8fafc;cursor:zoom-in}
+  .alt .n{flex:1;min-width:0}
+  .alt .n a{color:var(--texto);text-decoration:none;display:block;overflow:hidden;
+            text-overflow:ellipsis;white-space:nowrap}
+  .alt .n a:hover{color:var(--azul);text-decoration:underline}
+  .alt .meta{display:flex;align-items:center;gap:6px;margin-top:2px}
+  .tag{font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 6px}
+  .tag.of{background:#e6f4ea;color:var(--verde)}
+  .tag.sc{background:#f1f5f9;color:var(--tenue)}
+  .tag.pr{background:#e6f4ea;color:var(--verde)}
+  .tag.md{background:#f1f5f9;color:var(--tenue)}
+  .tag.md.win{background:var(--verde);color:#fff}
+  .alt .p small{font-weight:600;color:var(--tenue);font-size:10px}
+  .alt .p{white-space:nowrap;font-weight:700;font-size:13.5px}
+  .btn-usar{background:#fff;color:var(--azul);box-shadow:inset 0 0 0 1px var(--linea);
+            padding:5px 10px;font-size:11.5px;border-radius:7px;white-space:nowrap;
+            font-weight:650;flex-shrink:0}
+  .btn-usar:hover{background:var(--azul-claro)}
+  .alt .p.barata{color:var(--azul)}
+  .alt .p.rebajado{color:var(--verde)}
+
+  /* ---------- Fila "Al carrito" ---------- */
+  .acciones{display:flex;align-items:center;gap:7px}
+  .acciones .cant{width:56px;padding:7px 8px;border:0;border-radius:8px;font-size:13px;
+                  text-align:center;font-family:inherit;box-shadow:inset 0 0 0 1px var(--linea)}
+  .btn-cart{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+            background:var(--azul);color:#fff;text-decoration:none;border-radius:9px;
+            padding:8px 12px;font-size:13px;font-weight:650;
+            box-shadow:0 2px 8px rgba(0,78,159,.28);transition:background .15s,transform .08s}
+  .btn-cart:hover{background:var(--azul-osc)}
+  .btn-cart:active{transform:translateY(1px)}
+  .btn-cart.no{background:#fff;color:var(--tenue);box-shadow:inset 0 0 0 1px var(--linea);
+               cursor:not-allowed;pointer-events:none}
+  .btn-cart.puesto{background:#e6f4ea;color:var(--verde);box-shadow:inset 0 0 0 1px #a9dcc4}
+  .btn-cart.puesto:hover{background:#d8ecdf}
+
+  /* ---------- Barra flotante del carrito ---------- */
+  #barraCarrito{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:40;
+                display:flex;align-items:center;gap:10px;background:#0f2b46;color:#fff;
+                border-radius:14px;padding:9px 10px 9px 16px;font-size:13.5px;
+                box-shadow:0 10px 30px rgba(10,30,50,.35);max-width:calc(100% - 24px)}
+  #barraCarrito.oculto{display:none}
+  #barraCarrito b{font-size:15px}
+  .cc-vaciar{background:transparent;color:#a9c2d8;padding:8px 10px;font-size:12.5px}
+  .cc-vaciar:hover{color:#fff}
+  .cc-ir{background:var(--verde);color:#fff;padding:9px 16px;font-size:13.5px;
+         box-shadow:0 2px 8px rgba(10,135,84,.4)}
+  .cc-ir:hover{background:#0b6b44}
+
+  .rebuscar{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+  .rebuscar input{flex:1;min-width:170px;padding:8px 11px;border:0;border-radius:9px;font-size:13px;
+                  box-shadow:inset 0 0 0 1px var(--linea);font-family:inherit}
+
+  /* ---------- Esqueletos mientras busca ---------- */
+  .skel{background:#fff;border-radius:14px;box-shadow:var(--sombra);padding:14px;height:150px;
+        display:flex;flex-direction:column;gap:11px}
+  .skel i{display:block;background:linear-gradient(90deg,#eef2f7 25%,#f8fafc 50%,#eef2f7 75%);
+          background-size:200% 100%;animation:brillo 1.2s infinite;border-radius:7px;height:13px}
+  .skel i.g{height:34px;width:55%}
+  .skel i.m{width:80%}
+  .skel i.s{width:40%}
+  @keyframes brillo{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  .aviso{background:#fffbeb;border-radius:12px;padding:12px 15px;font-size:13.5px;
+         margin-bottom:14px;box-shadow:inset 0 0 0 1px #fde68a}
+  .aviso.malo{background:#fef2f2;box-shadow:inset 0 0 0 1px #fecaca}
+
+  /* Cartel de "esto que estás viendo es lo último guardado, no recién buscado" */
+  .guardado{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+            background:#eff6ff;border-radius:12px;padding:10px 14px;font-size:13px;
+            margin:14px 0 4px;box-shadow:inset 0 0 0 1px #bfdbfe}
+  .guardado .g-txt{flex:1;min-width:200px;line-height:1.45}
+  .guardado.viejo{background:#fffbeb;box-shadow:inset 0 0 0 1px #fde68a}
+  .sin-nada{grid-column:1/-1;text-align:center;color:var(--tenue);font-size:14px;padding:40px 20px}
+
+  /* ---------- Explorador de ofertas (pantalla aparte) ---------- */
+  .fila-tabs{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  .tabs{display:flex;gap:6px;background:#fff;border-radius:12px;padding:5px;
+        box-shadow:var(--sombra);width:fit-content}
+
+  .tab{background:transparent;color:var(--tenue);padding:8px 16px;font-size:13.5px;
+       border-radius:9px;font-weight:650}
+  .tab.on{background:var(--azul);color:#fff}
+  .tab:hover:not(.on){background:var(--azul-claro);color:var(--azul)}
+
+  .of-filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  select{border:0;border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:inherit;
+         background:#fff;box-shadow:inset 0 0 0 1px var(--linea);color:var(--texto);
+         max-width:100%}
+  select:focus{outline:2px solid var(--azul);outline-offset:1px}
+  .of-filtros .campo{display:flex;flex-direction:column;gap:4px}
+  .of-filtros label{font-size:11px;color:var(--tenue);text-transform:uppercase;
+                    letter-spacing:.4px;font-weight:700}
+  .of-filtros input[type=search]{border:0;border-radius:9px;padding:9px 11px;font-size:13.5px;
+                                 box-shadow:inset 0 0 0 1px var(--linea);font-family:inherit;
+                                 min-width:200px}
+  .of-resumen{font-size:12.5px;color:var(--tenue);margin:14px 0 10px}
+  .fino-nota{font-size:12px;color:var(--tenue);margin:10px 0 0;line-height:1.5}
+
+  /* ---------- Barra de progreso de la búsqueda de ofertas ---------- */
+  .carga{background:#fff;border-radius:12px;box-shadow:var(--sombra);
+         padding:14px 16px;margin-top:16px}
+  .carga-cab{display:flex;align-items:center;gap:12px;margin-bottom:9px}
+  .carga-txt{flex:1;font-size:13.5px;font-weight:650}
+  .carga-bar{height:8px;border-radius:999px;background:#eef2f7;overflow:hidden}
+  .carga-bar i{display:block;height:100%;border-radius:999px;
+               background:linear-gradient(90deg,var(--azul),var(--naranja));
+               transition:width .3s ease;position:relative}
+  /* Rayas en movimiento: dejan claro que sigue trabajando aunque el número
+     no se mueva (una categoría grande tarda varios segundos por tramo). */
+  .carga-bar i::after{content:"";position:absolute;inset:0;
+        background:linear-gradient(90deg,rgba(255,255,255,0) 0%,
+                   rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 100%);
+        animation:corre 1.1s linear infinite}
+  @keyframes corre{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  .carga.listo .carga-bar i::after{display:none}
+  .carga-sub{font-size:12px;color:var(--tenue);margin-top:7px}
+
+  /* ---------- Paginado del explorador ---------- */
+  .of-pag{display:flex;align-items:center;justify-content:center;gap:8px;
+          flex-wrap:wrap;margin:18px 0 4px}
+  .of-pag button{background:#fff;color:var(--azul);box-shadow:inset 0 0 0 1px var(--linea);
+                 padding:8px 14px;font-size:13px;border-radius:9px}
+  .of-pag button:hover:not(:disabled){background:var(--azul-claro)}
+  .of-pag .cual{font-size:13px;color:var(--tenue);padding:0 6px}
+  .of-pag .cual b{color:var(--texto)}
+
+  /* ---------- Selector múltiple de categorías ---------- */
+  .cats-cab{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+  .cats-tit{font-size:11px;color:var(--tenue);text-transform:uppercase;
+            letter-spacing:.4px;font-weight:700}
+  .cats-cuenta{font-size:12px;color:var(--azul);font-weight:700;
+               background:var(--azul-claro);border-radius:999px;padding:2px 10px}
+  #ofFiltroCat{border:0;border-radius:9px;padding:7px 11px;font-size:13px;flex:1;
+               min-width:160px;box-shadow:inset 0 0 0 1px var(--linea);font-family:inherit}
+  .cats{max-height:280px;overflow:auto;background:#f8fafc;border-radius:11px;
+        padding:10px 12px;box-shadow:inset 0 0 0 1px var(--linea);
+        column-width:230px;column-gap:22px}
+  .cat-dep{break-inside:avoid;margin-bottom:12px}
+  .cat-l{display:flex;align-items:center;gap:7px;font-size:13px;padding:3px 0;
+         cursor:pointer;line-height:1.25}
+  .cat-l:hover{color:var(--azul)}
+  .cat-l input{width:15px;height:15px;accent-color:var(--azul);flex-shrink:0;margin:0}
+  .cat-l.dep{font-weight:700;font-size:13.5px}
+  .cat-l.hijo{padding-left:22px;color:var(--tenue)}
+  .cat-l.hijo:hover{color:var(--azul)}
+  .cat-dep.oculto{display:none}
+
+  /* align-items:stretch (el que viene por defecto) + height:100% en la tarjeta:
+     todas las de una misma fila miden lo mismo. Con "start" las que tenían promo
+     de varias unidades quedaban más altas y las vecinas dejaban un hueco. */
+  .of-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+           gap:12px}
+  /* La franja de la izquierda lleva el color de la SUBCATEGORÍA: de un vistazo
+     se ve de qué rubro es cada tarjeta. El color lo calcula colorCat() en el JS
+     y entra por la variable --franja. */
+  .oc{background:#fff;border-radius:13px;box-shadow:var(--sombra);padding:13px;
+      display:flex;flex-direction:column;gap:9px;position:relative;height:100%;
+      --franja:var(--verde)}
+  /* Promos + botón viajan juntos y se van al pie: así los botones quedan
+     alineados entre tarjetas por más que arriba haya promo de varias unidades,
+     cartel de precio por kilo, o nada. */
+  .oc-pie{margin-top:auto;display:flex;flex-direction:column;gap:9px}
+  .oc:hover{box-shadow:var(--sombra-alta)}
+  /* EL QUE MÁS RINDE de su subcategoría: toda la tarjeta se pinta de amarillo.
+     Antes esto era un cartel de texto; el usuario lo pidió así, se ve de un
+     vistazo y no le suma otra línea a la tarjeta. El detalle (cuánto sale por
+     kilo/litro y contra qué se comparó) vive en el title de la tarjeta.
+     Va DESPUÉS de .oc:hover —misma especificidad, gana el último— y por eso
+     el hover necesita su propia regla. */
+  .oc.mejor{background:linear-gradient(135deg,#fff6d6,#fffdf5);
+            box-shadow:inset 0 0 0 2px var(--amarillo),var(--sombra)}
+  .oc.mejor:hover{box-shadow:inset 0 0 0 2px var(--amarillo),var(--sombra-alta)}
+  .oc::after{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;
+             border-radius:0 4px 4px 0;background:var(--franja)}
+  .oc-top{display:flex;gap:12px;align-items:center}
+  .oc-nombre{font-weight:650;font-size:14px;line-height:1.3}
+  .oc-nombre a{color:var(--texto);text-decoration:none}
+  .oc-nombre a:hover{color:var(--azul);text-decoration:underline}
+  /* Mismo color que la franja, para que se lea la relación de un golpe. */
+  .oc-cat{font-size:11px;color:var(--franja);font-weight:700;text-transform:uppercase;
+          letter-spacing:.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* La franja ya no puede avisar "esto es sólo con Tarjeta": para eso, este chip. */
+  .oc-tarj{align-self:flex-start;background:var(--amarillo);color:#fff;font-size:10px;
+           font-weight:750;letter-spacing:.5px;padding:2px 8px;border-radius:999px}
+  .oc .precios{margin-top:2px}
+  .oc .precio{font-size:22px}
+
+  /* El padding grande deja lugar a la barra flotante del carrito. */
+  footer{text-align:center;color:var(--tenue);font-size:12px;padding:8px 20px 90px}
+
+  /* ---------- Ampliar imagen al hacer click ---------- */
+  .lightbox{position:fixed;inset:0;background:rgba(15,23,42,.82);z-index:200;
+            display:flex;align-items:center;justify-content:center;padding:26px;
+            cursor:zoom-out}
+  .lightbox.oculto{display:none}
+  .lightbox img{max-width:min(92vw,620px);max-height:88vh;object-fit:contain;
+                border-radius:14px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+
+  @media (max-width:640px){
+    .wrap{padding:14px 12px 30px}
+    .switch{margin-left:0}
+    .grid{grid-template-columns:1fr}
+    .kpi{min-width:calc(50% - 5px)}
+  }
+</style>
+</head>
+<body>
+
+<div id="progreso"></div>
+
+<header>
+  <h1>Precios y ofertas · Carrefour Argentina</h1>
+  <span class="vigencia oculto" id="vigencia"></span>
+  <div id="estado"></div>
+</header>
+
+<div class="wrap">
+
+  <div id="sinServidor" class="panel oculto">
+    <div class="panel-cuerpo">
+      <div class="aviso malo">
+        <b>Falta encender el buscador.</b><br>
+        Esta página sola no puede consultar Carrefour. Cerrá la pestaña y hacé doble clic en
+        <code>abrir-verificador.bat</code>, en la misma carpeta. Se abre una ventana negra
+        —dejala abierta— y el navegador ya funcionando.
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="oculto">
+
+    <div class="fila-tabs">
+      <div class="tabs">
+        <button class="tab on" id="tabLista">Mi lista</button>
+        <button class="tab" id="tabOfertas">Explorar ofertas</button>
+      </div>
+    </div>
+
+    <!-- ============ Pantalla 2: explorador de ofertas ============ -->
+    <div id="vistaOfertas" class="oculto">
+      <section class="panel">
+        <div class="panel-cuerpo">
+          <p class="ayuda">
+            <b>Todas las ofertas vigentes</b> de las categorías que marques. Recorre cada
+            una entera, así que cuantas más marques, más tarda; la segunda vez es
+            instantánea. No usa tu lista: es para mirar qué hay.
+          </p>
+          <div class="cats-cab">
+            <label class="cats-tit" for="ofFiltroCat">Categorías</label>
+            <span class="cats-cuenta" id="ofCuentaCat">—</span>
+            <input type="search" id="ofFiltroCat" placeholder="Buscar categoría…">
+            <button class="btn-mini" id="ofTodas">Todas</button>
+            <button class="btn-mini" id="ofNinguna">Ninguna</button>
+          </div>
+          <div class="cats" id="ofCats">Cargando categorías…</div>
+
+          <div class="of-filtros">
+            <span class="campo">
+              <label>&nbsp;</label>
+              <button class="btn-p" id="ofBuscar">Buscar ofertas</button>
+            </span>
+            <span class="campo">
+              <label>&nbsp;</label>
+              <button class="btn-s" id="ofGuardarCats">Guardar selección</button>
+            </span>
+            <span class="campo">
+              <label>&nbsp;</label>
+              <button class="btn-s" id="ofCargarCats">Cargar del archivo</button>
+            </span>
+          </div>
+          <p class="fino-nota">
+            Lo que marcás se guarda solo en este navegador. "Guardar selección" además lo
+            escribe en <code>categorias.txt</code>, en la carpeta del programa, para
+            recuperarlo después o llevarlo a otra computadora.
+          </p>
+        </div>
+      </section>
+
+      <!-- Aparece sólo cuando lo que se ve viene del archivo, no de una búsqueda recién hecha. -->
+      <div class="guardado oculto" id="ofAvisoGuardado">
+        <span class="g-txt"></span>
+        <button class="btn-mini g-nuevo">Buscar de nuevo</button>
+        <button class="btn-mini g-borrar">Descartar</button>
+      </div>
+
+      <div class="toolbar oculto" id="ofToolbar">
+        <div class="controles">
+          <span class="buscador">
+            <input type="search" id="ofTexto" placeholder="Filtrar por nombre o marca…">
+          </span>
+          <select id="ofDesc" title="Descuento mínimo">
+            <option value="0">Cualquier descuento</option>
+            <option value="10">10% o más</option>
+            <option value="20">20% o más</option>
+            <option value="30">30% o más</option>
+            <option value="40">40% o más</option>
+            <option value="50">50% o más</option>
+          </select>
+          <select id="ofOrden" title="Ordenar">
+            <option value="nombre" selected>Nombre (A-Z)</option>
+            <option value="desc">Mayor descuento</option>
+            <option value="precio">Menor precio</option>
+            <option value="medida">Mejor precio por kilo/litro</option>
+          </select>
+          <label class="switch" id="ofSwTarjeta"
+                 title="Promos que sólo aplican pagando con Tarjeta Carrefour o Cuenta Digital Carrefour">
+            <input type="checkbox" id="ofChkTarjeta">
+            <span class="pista"></span>
+            <span>Contar Tarjeta / Cuenta Digital</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="carga oculto" id="ofCargando">
+        <div class="carga-cab">
+          <span class="carga-txt" id="ofCargaTxt">Buscando…</span>
+          <button class="btn-mini" id="ofCancelar">Cancelar</button>
+        </div>
+        <div class="carga-bar"><i id="ofCargaBar" style="width:0%"></i></div>
+        <div class="carga-sub" id="ofCargaSub"></div>
+      </div>
+
+      <div class="of-resumen oculto" id="ofResumen"></div>
+      <div id="ofSalida" class="of-grid"></div>
+      <div class="of-pag oculto" id="ofPaginas"></div>
+    </div>
+
+    <!-- ============ Pantalla 1: tu lista ============ -->
+    <div id="vistaLista">
+
+    <section class="panel abierto" id="panelLista">
+      <button class="plegable" id="btnPlegar" aria-expanded="true">
+        <span class="flecha">▶</span>
+        <b>Tu lista de artículos</b>
+        <span class="cuenta" id="conteo"></span>
+      </button>
+      <div class="panel-cuerpo" id="cuerpoLista">
+        <p class="ayuda">
+          <b>Un artículo por línea</b>, escrito como lo dirías vos. Con eso se busca en
+          Carrefour y con eso mismo se ordenan los resultados.
+        </p>
+        <details class="ayuda-mas">
+          <summary>¿Y si un artículo no aparece o trae cualquier cosa?</summary>
+          <div class="ayuda-cuerpo">
+            <p>
+              Agregá un <code>+</code> y, a la derecha, <b>la palabra con la que sí se
+              encuentra</b> (normalmente la marca). Queda la línea partida en dos trabajos:
+            </p>
+            <p class="ejemplo">
+              <code>Queso crema clásico 290 grs + casancrem</code>
+            </p>
+            <ul>
+              <li><b>Izquierda:</b> describe lo que querés. No se busca con esto: sirve
+                  para <b>elegir y ordenar</b> entre lo que vuelve.</li>
+              <li><b>Derecha:</b> es lo único que se le pide a Carrefour.</li>
+            </ul>
+            <p>
+              Así podés pedir por marca y que igual te ordene por presentación: de todos
+              los Casancrem que traiga, arriba queda el clásico de 290 g.
+            </p>
+            <p class="fino">
+              Cada resultado tiene que compartir <b>2 palabras</b> con la parte izquierda,
+              si no se descarta. Cuanto más parecida sea esa parte al nombre real del
+              producto, mejor ordena. El <code>&gt;</code> de siempre sigue funcionando
+              igual que el <code>+</code>.
+            </p>
+          </div>
+        </details>
+        <textarea id="lista" spellcheck="false" placeholder="Leche entera 1 lt&#10;Yerba mate 500 grs&#10;..."></textarea>
+        <div class="fila">
+          <button class="btn-p" id="btnGo">Verificar precios</button>
+          <button class="btn-s" id="btnGuardar">Guardar lista</button>
+          <button class="btn-s" id="btnRecargar">Descartar cambios</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aparece sólo cuando lo que se ve viene del archivo, no de una búsqueda recién hecha. -->
+    <div class="guardado oculto" id="avisoGuardado">
+      <span class="g-txt"></span>
+      <button class="btn-mini g-nuevo">Buscar de nuevo</button>
+      <button class="btn-mini g-borrar">Descartar</button>
+    </div>
+
+    <div class="toolbar oculto" id="toolbar">
+      <div class="stats" id="stats"></div>
+      <div class="controles">
+        <span class="chip on" data-f="todos">Todos<span class="n"></span></span>
+        <span class="chip" data-f="oferta">Ofertas<span class="n"></span></span>
+        <span class="chip" data-f="regular">Precio regular<span class="n"></span></span>
+        <span class="chip" data-f="dudoso">A revisar<span class="n"></span></span>
+        <span class="chip" data-f="sin">Sin resultados<span class="n"></span></span>
+        <span class="buscador">
+          <input type="search" id="buscador" placeholder="Filtrar por nombre…">
+        </span>
+        <label class="switch" id="swTarjeta"
+               title="Promos que sólo aplican pagando con Tarjeta Carrefour o Cuenta Digital Carrefour">
+          <input type="checkbox" id="chkTarjeta">
+          <span class="pista"></span>
+          <span>Contar Tarjeta / Cuenta Digital</span>
+        </label>
+      </div>
+    </div>
+
+    <div id="salida" class="grid"></div>
+
+    </div><!-- /vistaLista -->
+
+  </div>
+
+</div>
+
+<!-- Barra flotante: junta todo lo elegido y lo manda en UN solo viaje. -->
+<div id="barraCarrito" class="oculto">
+  <span class="cc-txt"><b id="ccCant">0</b> <span id="ccPal">artículos</span> listos</span>
+  <button class="cc-vaciar" id="ccVaciar">Vaciar</button>
+  <button class="cc-ir" id="ccEnviar">Enviar al carrito de Carrefour</button>
+</div>
+
+<!-- Imagen ampliada: se llena y se muestra al hacer click en cualquier miniatura. -->
+<div id="lightbox" class="lightbox oculto">
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<footer>
+  © Warezney Compra-System 2026
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var $ = function(id){ return document.getElementById(id); };
+  var resultados = [];
+  var filtro = "todos";
+  var texto = "";
+  var esperando = 0;          // tarjetas fantasma mientras llegan las respuestas
+  var EN_PARALELO_ART = 5;    // articulos que se consultan a la vez
+  // Apagado por defecto: las promos de Tarjeta / Cuenta Digital Carrefour
+  // no cuentan como oferta hasta que vos lo pidas.
+  var incluirTarjeta = false;
+
+  // ------------------------------------------------------------------
+  // Todo pasa por el servidor local de Python (mismo origen).
+  // No hay llamadas directas a carrefour.com.ar desde el navegador,
+  // asi que no existe el problema de CORS.
+  // ------------------------------------------------------------------
+  function api(ruta, datos){
+    var opts = { method: datos ? "POST" : "GET", headers:{ "Content-Type":"application/json" } };
+    if(datos) opts.body = JSON.stringify(datos);
+    return fetch(ruta, opts).then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+  }
+
+  function plata(n){
+    if(n === null || n === undefined) return "—";
+    return "$" + Number(n).toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // Hasta cuándo valen las ofertas.
+  // La fecha sale de la CAMPAÑA que Carrefour escribe en el nombre de la promo
+  // ("…-Gigante28 al 3.8" = Ahorro Gigante, del 28 al 3 de agosto). Python la
+  // traduce a campania/desde/hasta. Se muestra la campaña con más productos
+  // entre las ofertas que estás viendo, y sólo si la fecha todavía no pasó.
+  // ------------------------------------------------------------------
+  var DIAS_CREIBLES = 60;
+
+  function fechaLinda(iso){
+    var t = iso.split("-");
+    var d = new Date(+t[0], +t[1] - 1, +t[2]);
+    return d.toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" });
+  }
+
+  function pintarVigencia(prods){
+    var caja = $("vigencia");
+    var hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    var grupos = {};      // "campaña|hasta" -> cuántos productos
+
+    (prods || []).forEach(function(p){
+      if(!p || !p.hasta || !esOferta(p)) return;
+      var t = p.hasta.split("-");
+      var d = new Date(+t[0], +t[1] - 1, +t[2]);
+      var dias = Math.round((d - hoy) / 86400000);
+      if(dias < 0 || dias > DIAS_CREIBLES) return;   // ya venció, o fecha rara
+      var k = (p.campania || "Ofertas") + "|" + p.hasta;
+      grupos[k] = (grupos[k] || 0) + 1;
+    });
+
+    var claves = Object.keys(grupos);
+    if(!claves.length){ caja.classList.add("oculto"); return; }
+
+    // La campaña que más productos aporta es la que se muestra.
+    var jefe = claves[0];
+    claves.forEach(function(k){ if(grupos[k] > grupos[jefe]) jefe = k; });
+    var partes = jefe.split("|");
+
+    caja.classList.remove("oculto");
+    caja.textContent = partes[0] + " · hasta el " + fechaLinda(partes[1]);
+    caja.title = "Según la campaña que Carrefour informa en la promoción ("
+      + grupos[jefe] + " productos)."
+      + (claves.length > 1
+         ? " También hay: " + claves.filter(function(k){ return k !== jefe; })
+             .map(function(k){
+               var q = k.split("|");
+               return q[0] + " hasta el " + fechaLinda(q[1]) + " (" + grupos[k] + ")";
+             }).join(", ")
+         : "");
+  }
+
+  function nivel(p){
+    if(p >= 0.8) return {clase:"m-alta",  txt:"Coincidencia alta con lo que buscaste"};
+    if(p >= 0.5) return {clase:"m-media", txt:"Coincidencia media: conviene revisarlo"};
+    return {clase:"m-baja", txt:"Coincidencia baja: probablemente no sea este producto"};
+  }
+
+  // Unico lugar donde se decide si algo esta "en oferta".
+  // Python ya excluyo las promos de Tarjeta / Cuenta Digital; aca se suman
+  // solo si el selector esta activado.
+  function esOferta(p){
+    if(!p) return false;
+    if(p.enOferta) return true;
+    return incluirTarjeta && !!(p.promosTarjeta && p.promosTarjeta.length);
+  }
+  function soloPorTarjeta(p){
+    return !!p && !p.enOferta && incluirTarjeta && !!(p.promosTarjeta && p.promosTarjeta.length);
+  }
+
+  // ------------------------------------------------------------------
+  // Promos de varias unidades ("2do al 70%", "3x2", "20% llevando 2").
+  // Traducen a: cuantas unidades hay que llevar y cuanto se paga en total,
+  // medido en "precios de una unidad". Con eso sale el precio por unidad.
+  // Los "X% off" a secas NO se tocan: ese descuento Carrefour ya lo aplico
+  // sobre el precio que devuelve, contarlo de nuevo seria descontar dos veces.
+  // ------------------------------------------------------------------
+  var TILDES = new RegExp("[\\u0300-\\u036f]", "g");  // acentos sueltos que deja NFD
+  function normTxt(s){
+    s = String(s).toLowerCase();
+    return s.normalize ? s.normalize("NFD").replace(TILDES, "") : s;
+  }
+
+  function leerPromo(txt){
+    var t = normTxt(txt), m;
+
+    // 3x2, 2x1, 4x3 → llevas N, pagas M
+    m = t.match(/\b(\d)\s*x\s*(\d)\b/);
+    if(m && +m[1] > +m[2] && +m[2] > 0){
+      return { unidades:+m[1], paga:+m[2], corta:m[1] + "x" + m[2] };
+    }
+
+    // "2do al 70%", "3ra unidad al 50%" → la unidad N tiene X% off
+    m = t.match(/\b(\d)\s*(?:do|da|ro|ra|to|ta|va|er)\b[^%\d]{0,18}?al\s*(\d{1,3})\s*%/);
+    if(m){
+      var n = +m[1], off = +m[2];
+      if(n >= 2 && n <= 9 && off > 0 && off <= 100){
+        return { unidades:n, paga:n - off / 100, corta:m[1] + "do al " + off + "%" };
+      }
+    }
+
+    // "50% en la 2da unidad" → mismo caso que arriba, dicho al reves
+    m = t.match(/(\d{1,3})\s*%[^%]{0,25}?\b(\d)\s*(?:do|da|ro|ra|to|ta|va|er)\b/);
+    if(m){
+      var n2 = +m[2], off2 = +m[1];
+      if(n2 >= 2 && n2 <= 9 && off2 > 0 && off2 <= 100){
+        return { unidades:n2, paga:n2 - off2 / 100, corta:m[2] + "do al " + off2 + "%" };
+      }
+    }
+
+    // "20% llevando 2", "llevando 3 25% off" → TODAS las unidades con X% off
+    m = t.match(/(\d{1,3})\s*%[^%]{0,20}?\blleva\w*\s*(\d)\b/) ||
+        t.match(/\blleva\w*\s*(\d)\b[^%]{0,20}?(\d{1,3})\s*%/);
+    if(m){
+      var a = +m[1], b = +m[2];
+      var pct = a > 9 ? a : b, uni = a > 9 ? b : a;   // el que pasa de 9 es el %
+      if(uni >= 2 && uni <= 9 && pct > 0 && pct < 100){
+        return { unidades:uni, paga:uni * (1 - pct / 100), corta:pct + "% x" + uni };
+      }
+    }
+    return null;
+  }
+
+  // Devuelve la promo mas conveniente del producto, ya con los pesos calculados.
+  // null si no hay ninguna de varias unidades.
+  function promoUnitaria(p){
+    if(!p || p.precio === null || p.precio === undefined) return null;
+    var lista = (p.promos || []).slice();
+    if(incluirTarjeta) lista = lista.concat(p.promosTarjeta || []);
+
+    var mejor = null;
+    lista.forEach(function(txt){
+      var d = leerPromo(txt);
+      if(!d || d.paga >= d.unidades) return;
+      var unitario = p.precio * d.paga / d.unidades;
+      if(!mejor || unitario < mejor.unitario){
+        mejor = { unitario:unitario, total:p.precio * d.paga, unidades:d.unidades,
+                  corta:d.corta, texto:txt,
+                  off:Math.round((1 - d.paga / d.unidades) * 100) };
+      }
+    });
+    return mejor;
+  }
+
+  // ------------------------------------------------------------------
+  // Cuanto rinde: precio por kilo / litro / unidad / metro.
+  // Sirve para comparar entre si los resultados de un mismo articulo, que
+  // vienen en presentaciones distintas (290 g vs 700 g vs pack x 3).
+  // El tamaño se lee del NOMBRE del producto, que es lo unico que manda
+  // Carrefour; por eso todo lo que sale de aca va con un "≈" adelante.
+  // ------------------------------------------------------------------
+  var UNIDAD = {
+    peso: { corta:"kg", nombre:"kilo" },
+    vol:  { corta:"L",  nombre:"litro" },
+    uni:  { corta:"un", nombre:"unidad" },
+    metro:{ corta:"m",  nombre:"metro" }
+  };
+
+  function aNumero(s){ return parseFloat(String(s).replace(",", ".")); }
+
+  // Devuelve { cant, tipo } ya normalizado a kg / L / unidades / metros.
+  function medida(nombre){
+    var t = normTxt(nombre), m;
+
+    // Multipack con peso o volumen: "3 x 250 g", "pack x 6 x 500 ml"
+    m = t.match(/(\d{1,2})\s*[x*]\s*(\d+(?:[.,]\d+)?)\s*(kgs?|kilos?|grs?|gramos?|g|mls?|cc|lts?|litros?|l)\b/);
+    if(m) return escalar(+m[1] * aNumero(m[2]), m[3]);
+
+    // Peso o volumen simple: "290 g", "1,5 lt", "473 ml"
+    m = t.match(/(\d+(?:[.,]\d+)?)\s*(kgs?|kilos?|grs?|gramos?|g|mls?|cc|lts?|litros?|l)\b/);
+    if(m) return escalar(aNumero(m[1]), m[2]);
+
+    // Metros: "rollo 30 m", "film 20 mts"
+    m = t.match(/(\d+(?:[.,]\d+)?)\s*(mts?|metros?)\b/);
+    if(m) return { cant:aNumero(m[1]), tipo:"metro" };
+
+    // Unidades: "x 6", "6 un", "12 rollos", "pack 24"
+    m = t.match(/(?:\bx\s*)?(\d{1,3})\s*(unidades?|unid|uni|un|u|rollos?|sobres?|saquitos?|capsulas?|barras?|latas?|potes?)\b/)
+     || t.match(/\bpack\s*(?:x\s*)?(\d{1,3})\b/)
+     || t.match(/\bx\s*(\d{1,3})\b/);
+    if(m && +m[1] > 1) return { cant:+m[1], tipo:"uni" };
+
+    return null;
+  }
+
+  function escalar(cant, uni){
+    if(/^(grs?|gramos?|g)$/.test(uni))       return { cant:cant / 1000, tipo:"peso" };
+    if(/^(kgs?|kilos?)$/.test(uni))          return { cant:cant,        tipo:"peso" };
+    if(/^(mls?|cc)$/.test(uni))              return { cant:cant / 1000, tipo:"vol"  };
+    return { cant:cant, tipo:"vol" };        // lt, litro, l
+  }
+
+  // Precio por kilo/litro/unidad, usando el precio que se ve (promo incluida).
+  function porMedida(p){
+    if(!p) return null;
+    var md = medida(p.nombre);
+    if(!md || !(md.cant > 0)) return null;
+    var pr = promoUnitaria(p);
+    var precio = pr ? pr.unitario : p.precio;
+    if(precio === null || precio === undefined) return null;
+    return { valor:precio / md.cant, tipo:md.tipo, uni:UNIDAD[md.tipo] };
+  }
+
+  // De una lista de productos del mismo articulo, cual rinde mas.
+  // Solo compara los que se miden igual (kilos con kilos, litros con litros).
+  function elQueRinde(lista, tipoRef){
+    var mejor = null;
+    lista.forEach(function(p){
+      var pm = porMedida(p);
+      if(!pm || pm.tipo !== tipoRef) return;
+      if(!mejor || pm.valor < mejor.pm.valor) mejor = { p:p, pm:pm };
+    });
+    return mejor;
+  }
+
+  // La medida mas usada entre los resultados de un articulo. Se compara contra
+  // ella: si la mayoria viene en gramos, no tiene sentido medir en unidades.
+  function tipoDominante(lista){
+    var cuenta = {}, mejor = null;
+    lista.forEach(function(p){
+      var m = porMedida(p);
+      if(m) cuenta[m.tipo] = (cuenta[m.tipo] || 0) + 1;
+    });
+    Object.keys(cuenta).forEach(function(k){
+      if(!mejor || cuenta[k] > cuenta[mejor]) mejor = k;
+    });
+    return mejor;
+  }
+
+  // El principal por defecto es EL QUE MAS RINDE (mejor precio por kilo/litro/
+  // unidad) entre los resultados del articulo. Si nadie declara tamaño en el
+  // nombre, se queda el que eligio Python (el de mayor coincidencia).
+  // No pisa lo que hayas elegido a mano con "Usar éste" (r.manual).
+  function elegirPrincipal(r){
+    if(!r || !r.principal || r.manual || !r.alternativas || !r.alternativas.length) return;
+    var todos = [r.principal].concat(r.alternativas);
+    var tipo = tipoDominante(todos);
+    if(!tipo) return;
+    var g = elQueRinde(todos, tipo);
+    if(!g || g.p === r.principal) return;
+    var j = r.alternativas.indexOf(g.p);
+    if(j < 0) return;
+    r.alternativas[j] = r.principal;
+    r.principal = g.p;
+    r.alternativas = porPrecio(r.alternativas);
+  }
+
+  // Ofertas primero; dentro de cada grupo, de mas barato a mas caro.
+  function porPrecio(lst){
+    // Compara por el precio que se ve en pantalla: con la promo ya aplicada.
+    function vale(p){
+      var pr = promoUnitaria(p);
+      return pr ? pr.unitario : p.precio;
+    }
+    return lst.slice().sort(function(a, b){
+      var oa = esOferta(a) ? 0 : 1, ob = esOferta(b) ? 0 : 1;
+      if(oa !== ob) return oa - ob;
+      var va = vale(a), vb = vale(b);
+      if(va === null && vb === null) return 0;
+      if(va === null) return 1;
+      if(vb === null) return -1;
+      return va - vb;
+    });
+  }
+
+  function grupoDe(r){
+    if(!r.principal) return 2;
+    return esOferta(r.principal) ? 0 : 1;
+  }
+
+  function pasaFiltro(r){
+    var p = r.principal;
+    if(filtro === "oferta"  && !(p && esOferta(p)))  return false;
+    if(filtro === "regular" && !(p && !esOferta(p))) return false;
+    if(filtro === "dudoso"  && !(p && p.score < 0.8)) return false;
+    if(filtro === "sin"     && p) return false;
+    if(texto){
+      var heno = (r.desc + " " + (p ? p.nombre + " " + p.marca : "")).toLowerCase();
+      if(heno.indexOf(texto) === -1) return false;
+    }
+    return true;
+  }
+
+  // ---------- Barra superior ----------
+  function pintarToolbar(){
+    var hay = resultados.length || esperando;
+    $("toolbar").classList.toggle("oculto", !hay);
+    if(!hay) return;
+
+    var ok      = resultados.filter(function(r){ return r.principal; });
+    var ofertas = ok.filter(function(r){ return esOferta(r.principal); });
+    var dudosos = ok.filter(function(r){ return r.principal.score < 0.8; });
+    var sinRes  = resultados.filter(function(r){ return !r.principal; });
+
+    $("stats").innerHTML =
+        '<div class="kpi destacado"><b>' + ofertas.length + '</b><span>en oferta</span></div>'
+      + '<div class="kpi"><b>' + (ok.length - ofertas.length) + '</b><span>precio regular</span></div>'
+      + '<div class="kpi"><b>' + dudosos.length + '</b><span>a revisar</span></div>'
+      + '<div class="kpi"><b>' + sinRes.length + '</b><span>sin resultados</span></div>';
+
+    var cuentas = {
+      todos: resultados.length, oferta: ofertas.length,
+      regular: ok.length - ofertas.length, dudoso: dudosos.length, sin: sinRes.length
+    };
+    Array.prototype.forEach.call(document.querySelectorAll(".chip[data-f]"), function(c){
+      var f = c.getAttribute("data-f");
+      c.querySelector(".n").textContent = cuentas[f];
+      c.classList.toggle("on", filtro === f);
+      // Se apaga el chip que no tiene nada, salvo que sea el filtro activo
+      // (si no, no habria forma de salir de el).
+      c.classList.toggle("vacio", f !== "todos" && !cuentas[f] && filtro !== f);
+    });
+    $("swTarjeta").classList.toggle("on", incluirTarjeta);
+  }
+
+  // ---------- Resultados ----------
+  function render(){
+    pintarToolbar();
+    pintarBarra();
+    pintarVigencia(resultados.map(function(r){ return r.principal; }));
+    var cont = $("salida");
+
+    if(!resultados.length && !esperando){ cont.innerHTML = ""; return; }
+
+    var vista = resultados.map(function(r, i){ return { r:r, idx:i }; })
+                          .filter(function(v){ return pasaFiltro(v.r); });
+
+    // Primero todo lo que esta en oferta, despues el resto, al final lo no encontrado.
+    // Dentro de cada grupo se respeta el orden de TU LISTA (r.pos), que no es el
+    // orden en que llegaron: los articulos se consultan de a varios en paralelo.
+    vista.sort(function(a, b){
+      var ga = grupoDe(a.r), gb = grupoDe(b.r);
+      if(ga !== gb) return ga - gb;
+      var pa = a.r.pos === undefined ? a.idx : a.r.pos;
+      var pb = b.r.pos === undefined ? b.idx : b.r.pos;
+      return pa - pb;
+    });
+
+    var html = "", grupoActual = -1;
+    var TITULOS = ["En oferta hoy", "Precio regular", "Sin resultados"];
+
+    vista.forEach(function(v){
+      var g = grupoDe(v.r);
+      if(g !== grupoActual){ grupoActual = g; html += '<div class="grupo">' + TITULOS[g] + '</div>'; }
+      html += tarjeta(v.r, v.idx);
+    });
+
+    for(var k = 0; k < esperando; k++){
+      html += '<div class="skel"><i class="s"></i><i class="m"></i><i class="g"></i><i class="s"></i></div>';
+    }
+
+    if(!vista.length && !esperando){
+      html += '<div class="sin-nada">Ningún artículo entra en este filtro.</div>';
+    }
+
+    cont.innerHTML = html;
+    conectarTarjetas(cont);
+  }
+
+  function tarjeta(r, idx){
+    var p = r.principal;
+
+    if(!p){
+      return '<div class="card error">'
+           + '<div class="buscado"><span class="txt">Buscaste</span></div>'
+           + '<div class="nombre">' + esc(r.desc) + '</div>'
+           + '<div class="regular">' + esc(r.error || "Sin resultados.") + '</div>'
+           + cajaRebuscar(idx, r.linea)
+           + '</div>';
+    }
+
+    var niv = nivel(p.score);
+    var oferta = esOferta(p);
+    var soloTarj = soloPorTarjeta(p);
+    var h = '<div class="card' + (oferta ? " oferta" : "") + (soloTarj ? " tarj" : "") + '">';
+
+    if(oferta){
+      h += soloTarj ? '<span class="flag tarj">CON TARJETA</span>'
+                    : '<span class="flag">OFERTA</span>';
+    }
+
+    // ---- Columna izquierda: qué es ----
+    // El puntaje de coincidencia sigue mandando (agrupa, ordena y filtra),
+    // pero no se dibuja: vive en el title de la linea "Buscaste".
+    h += '<div class="izq">'
+       + '<div class="buscado" title="' + esc(niv.txt) + ' (' + Math.round(p.score * 100)
+       + '%) · Búsqueda: ' + esc(r.via || "-") + '">'
+       + '<span class="txt">' + esc(r.desc) + '</span></div>'
+
+       + '<div class="cuerpo">'
+       + (p.img ? '<img class="thumb" src="' + esc(p.img) + '" alt="" loading="lazy">' : '')
+       + '<div class="datos">'
+       + '<div class="nombre"><a href="' + esc(p.link) + '" target="_blank" rel="noopener">'
+       + esc(p.nombre) + '</a></div>'
+       + '</div></div>';
+
+    var chips = p.promos.map(function(t){ return '<span class="promo">' + esc(t) + '</span>'; });
+    if(p.desc > 0 && !p.promos.length) chips.push('<span class="promo">Precio rebajado</span>');
+    // Las promos de medio de pago propio sólo se ven si el selector está prendido.
+    if(incluirTarjeta){
+      (p.promosTarjeta || []).forEach(function(t){
+        chips.push('<span class="promo tarjeta on">' + esc(t) + '</span>');
+      });
+    }
+    h += chips.length ? '<div class="promos">' + chips.join("") + '</div>'
+                      : '<div class="regular">Sin promociones activas</div>';
+
+    // ¿Cuál de todos los resultados de este artículo rinde más por kilo/litro?
+    // Sólo se comparan los que se miden igual (kilos con kilos, litros con litros).
+    var pmP = porMedida(p);
+    var gana = null, rivales = 0;
+    if(pmP){
+      r.alternativas.forEach(function(a){
+        var x = porMedida(a);
+        if(x && x.tipo === pmP.tipo) rivales++;
+      });
+      gana = elQueRinde([p].concat(r.alternativas), pmP.tipo);
+    }
+    if(gana && rivales){
+      h += gana.p === p
+        ? '<div class="rinde propio">✓ De las opciones que hay, ésta es la que más rinde: '
+          + '<b>' + plata(pmP.valor) + ' por ' + pmP.uni.nombre + '</b></div>'
+        : '<div class="rinde">Rinde más: <b>' + esc(gana.p.nombre) + '</b> · '
+          + plata(gana.pm.valor) + ' por ' + gana.pm.uni.nombre
+          + ' <span class="vs">(éste: ' + plata(pmP.valor) + ')</span></div>';
+    }
+
+    // ---- Columna derecha: cuánto sale y qué hacés ----
+    h += '</div><div class="der">' + bloquePrecios(p) + filaCarrito(p) + '</div>';
+
+    // ---- Pie a todo lo ancho: los desplegables ----
+    h += '<div class="pie">';
+
+    if(r.alternativas.length){
+      // r.abierto queda en true al elegir otro producto, para no cerrar la lista.
+      h += '<details' + ((r.abierto || p.score < 0.8) ? " open" : "") + '><summary>'
+         + r.alternativas.length + ' alternativa' + (r.alternativas.length > 1 ? "s" : "")
+         + '</summary><div class="alts">'
+         + r.alternativas.map(function(a, j){
+             // Misma regla que arriba: si hay promo de varias unidades, el precio
+             // que se muestra es el de una unidad aprovechandola.
+             var pa = promoUnitaria(a);
+             var vale = pa ? pa.unitario : a.precio;
+             var barata = vale !== null && p.precio !== null && vale < p.precio;
+             var pmA = porMedida(a);
+             var ganaA = !!(gana && gana.p === a);
+             return '<div class="alt' + (ganaA ? " rinde-mas" : "") + '">'
+                  + (a.img ? '<img class="alt-thumb" src="' + esc(a.img) + '" alt="" loading="lazy">' : '')
+                  + '<span class="n">'
+                  + '<a href="' + esc(a.link) + '" target="_blank" rel="noopener"'
+                  + ' title="Coincidencia ' + Math.round(a.score * 100) + '%">'
+                  + esc(a.nombre) + '</a>'
+                  + '<span class="meta">'
+                  + (esOferta(a) ? '<span class="tag of">oferta</span>' : '')
+                  + (pa ? '<span class="tag pr">' + esc(pa.corta) + '</span>' : '')
+                  + (pmA ? '<span class="tag md' + (ganaA ? " win" : "") + '">≈'
+                         + plata(pmA.valor) + '/' + pmA.uni.corta + '</span>' : '')
+                  + '</span></span>'
+                  + '<span class="p' + ((pa || a.desc > 0) ? " rebajado" : (barata ? " barata" : "")) + '"'
+                  + (pa ? ' title="' + esc(pa.texto) + ' · llevando ' + pa.unidades
+                        + ' pagás ' + plata(pa.total) + '"' : '') + '>'
+                  + plata(vale) + (pa ? ' <small>c/u</small>' : '') + '</span>'
+                  + '<button class="btn-usar" data-usar="' + idx + '" data-alt="' + j + '" '
+                  + 'title="Poner este producto como el principal de este artículo">'
+                  + 'Usar éste</button>'
+                  + '</div>';
+           }).join("")
+         + '</div></details>';
+    }
+
+    h += '<details><summary>Ajustar búsqueda</summary>' + cajaRebuscar(idx, r.linea) + '</details>';
+    return h + '</div></div>';
+  }
+
+  // ---------- Bloque de precios ----------
+  // Si hay una promo de varias unidades, el numero grande pasa a ser el precio
+  // POR UNIDAD aprovechandola, y abajo se aclara cuanto hay que llevar y el total.
+  function bloquePrecios(p){
+    var pr = promoUnitaria(p);
+    var h = '<div class="precios">';
+
+    if(pr){
+      h += '<span class="precio rebajado" title="' + esc(pr.texto) + '">'
+         + plata(pr.unitario) + '</span><span class="cu">c/u</span>'
+         + '<span class="tachado" title="Precio de una sola unidad">' + plata(p.precio) + '</span>'
+         + '<span class="off">-' + pr.off + '%</span>';
+    }else{
+      h += '<span class="precio' + (p.desc > 0 ? " rebajado" : "") + '">' + plata(p.precio) + '</span>'
+         + (p.desc > 0 ? '<span class="tachado">' + plata(p.lista) + '</span>'
+                       + '<span class="off">-' + p.desc + '%</span>' : '');
+    }
+    var pm = porMedida(p);
+    if(pm){
+      h += '<span class="xu" title="Estimado a partir del tamaño que dice el nombre">≈ '
+         + plata(pm.valor) + ' por ' + pm.uni.nombre + '</span>';
+    }
+    h += (!p.disponible ? '<span class="agotado">Sin stock online</span>' : '') + '</div>';
+
+    if(pr){
+      h += '<div class="calc">Llevando <b>' + pr.unidades + '</b> pagás '
+         + plata(pr.total) + ' · ' + esc(pr.corta)
+         + (p.desc > 0 ? ' · lista ' + plata(p.lista) : '') + '</div>';
+    }
+    return h;
+  }
+
+  // ------------------------------------------------------------------
+  // Carrito: se arma aca y se manda UNA sola vez.
+  //
+  // Antes cada boton era un link a /checkout/cart/add: un articulo = una
+  // navegacion, y cada navegacion arrastra el checkout entero de VTEX
+  // (crear la sesion, el orderForm, el redirect final al carrito). Con 10
+  // articulos eran 10 viajes lentos y 10 pestañas.
+  //
+  // Ahora "Agregar" no toca la red: sólo marca el articulo. La barra de
+  // abajo manda todos los SKU juntos en una URL — /checkout/cart/add acepta
+  // listas separadas por coma — asi que hay UN viaje y UN redirect en total,
+  // siempre sobre la misma pestaña (target con nombre fijo).
+  // ------------------------------------------------------------------
+  var CARREFOUR = "https://www.carrefour.com.ar";
+  var seleccion = {};        // sku -> { sku, vendedor, cant, nombre }
+
+  // OJO: para varios articulos hay que REPETIR el trio sku/qty/seller.
+  // La forma "sku=1,2,3&qty=1,1,1" devuelve HTTP 400 (Bad Request).
+  //   ...cart/add?sku=111&qty=2&seller=1&sku=222&qty=1&seller=1&sc=1
+  function linkCarrito(items){
+    var partes = items.map(function(x){
+      return "sku=" + encodeURIComponent(x.sku)
+           + "&qty=" + x.cant
+           + "&seller=" + encodeURIComponent(x.vendedor || "1");
+    });
+    return CARREFOUR + "/checkout/cart/add?" + partes.join("&") + "&sc=1";
+  }
+
+  function elegidos(){
+    return Object.keys(seleccion).map(function(k){ return seleccion[k]; });
+  }
+
+  function pintarBarra(){
+    var n = elegidos().length;
+    $("barraCarrito").classList.toggle("oculto", n === 0);
+    $("ccCant").textContent = n;
+    $("ccPal").textContent = n === 1 ? "artículo" : "artículos";
+  }
+
+  // El boton se identifica por SKU, no por posicion en la lista: asi la misma
+  // funcion sirve para las tarjetas de tu lista y para el explorador de ofertas.
+  var catalogo = {};         // sku -> producto, para poder recuperarlo al clickear
+
+  function filaCarrito(p){
+    if(!p.sku){
+      return '<div class="acciones">'
+           + '<span class="btn-cart no" title="Carrefour no devolvió el código de este producto">'
+           + 'Sin código para el carrito</span></div>';
+    }
+    if(!p.disponible){
+      return '<div class="acciones">'
+           + '<span class="btn-cart no" title="No hay stock online">Sin stock online</span></div>';
+    }
+    catalogo[p.sku] = p;
+    // Si hay promo de varias unidades, la cantidad arranca en la que la activa.
+    var pr = promoUnitaria(p);
+    var ya = seleccion[p.sku];
+    var cant = ya ? ya.cant : (pr ? pr.unidades : 1);
+    return '<div class="acciones">'
+         + '<input class="cant" type="number" min="1" max="99" value="' + cant + '" '
+         + 'data-cant="' + esc(p.sku) + '" title="Cantidad" aria-label="Cantidad">'
+         + '<button class="btn-cart' + (ya ? " puesto" : "") + '" data-cart="' + esc(p.sku) + '">'
+         + (ya ? "✓ Agregado · quitar" : "Agregar al carrito") + '</button>'
+         + '</div>';
+  }
+
+  function cajaRebuscar(idx, linea){
+    return '<div class="rebuscar">'
+         + '<input type="text" data-req="' + idx + '" value="' + esc(linea) + '" '
+         + 'placeholder="Descripción &gt; palabra clave">'
+         + '<button class="btn-mini" data-re="' + idx + '">Buscar</button>'
+         + '</div>';
+  }
+
+  function conectarTarjetas(cont){
+    // "Agregar" no llama a Carrefour: sólo marca o desmarca el articulo.
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-cart]"), function(b){
+      b.onclick = function(){
+        var sku = b.getAttribute("data-cart");
+        var p = catalogo[sku];
+        if(!p) return;
+
+        if(seleccion[sku]){
+          delete seleccion[sku];
+          b.classList.remove("puesto");
+          b.textContent = "Agregar al carrito";
+        }else{
+          var inp = cont.querySelector('[data-cant="' + sku + '"]');
+          var n = Math.min(99, Math.max(1, parseInt(inp && inp.value, 10) || 1));
+          seleccion[sku] = { sku:sku, vendedor:p.vendedor || "1", cant:n, nombre:p.nombre };
+          b.classList.add("puesto");
+          b.textContent = "✓ Agregado · quitar";
+        }
+        pintarBarra();
+      };
+    });
+
+    // "Usar éste": intercambia la alternativa elegida con el principal.
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-usar]"), function(b){
+      b.onclick = function(){
+        var i = +b.getAttribute("data-usar");
+        var j = +b.getAttribute("data-alt");
+        var r = resultados[i];
+        if(!r || !r.principal || !r.alternativas[j]) return;
+
+        var elegido = r.alternativas[j];
+        r.alternativas[j] = r.principal;    // el que estaba baja a la lista
+        r.principal = elegido;
+        r.alternativas = porPrecio(r.alternativas);
+        r.abierto = true;                   // la lista queda desplegada
+        r.manual = true;                    // tu eleccion manda: no se repisa
+        render();
+      };
+    });
+
+    // Cambiar la cantidad de algo ya marcado lo actualiza en el acto.
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-cant]"), function(inp){
+      inp.onchange = function(){
+        var sku = inp.getAttribute("data-cant");
+        if(seleccion[sku]){
+          seleccion[sku].cant = Math.min(99, Math.max(1, parseInt(inp.value, 10) || 1));
+        }
+      };
+    });
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-re]"), function(b){
+      b.onclick = function(){
+        var i = +b.getAttribute("data-re");
+        var q = cont.querySelector('[data-req="' + i + '"]').value.trim();
+        if(!q) return;
+        b.disabled = true; b.textContent = "…";
+        api("/api/buscar", { linea: q }).then(function(res){
+          res.pos = resultados[i] ? resultados[i].pos : i;   // no pierde su lugar
+          elegirPrincipal(res);
+          resultados[i] = res; render();
+        }, function(e){ aviso("No se pudo buscar: " + e.message); render(); });
+      };
+    });
+  }
+
+  // ==================================================================
+  // Explorador de ofertas — pantalla aparte, no toca tu lista.
+  // Comparte el carrito, el selector de Tarjeta y todo el calculo de
+  // promos y precio por medida. Lo unico propio es de donde saca los datos.
+  // ==================================================================
+  var ofertas = [];          // lo ultimo que trajo el servidor
+  var ofCategorias = [];
+  var ofBuscando = false;
+  var ofUsado = false;       // hasta que no busques, la pantalla queda en blanco
+
+  function vista(cual){
+    var esOf = cual === "ofertas";
+    $("vistaOfertas").classList.toggle("oculto", !esOf);
+    $("vistaLista").classList.toggle("oculto", esOf);
+    $("tabOfertas").classList.toggle("on", esOf);
+    $("tabLista").classList.toggle("on", !esOf);
+    // La vigencia del header habla de lo que estás mirando ahora.
+    if(esOf) pintarVigencia(ofUsado ? ofertasFiltradas() : []);
+    else     pintarVigencia(resultados.map(function(r){ return r.principal; }));
+    if(esOf && !ofCategorias.length) cargarCategorias();
+  }
+
+  // ---- Selección múltiple de categorías ----
+  // La verdad vive en elegidasCat (un objeto id -> true). Se guarda sola en el
+  // navegador (localStorage) y, si tocás "Guardar selección", también en
+  // categorias.txt, que Python escribe en la carpeta del programa.
+  var CLAVE_CATS = "carrefour.categorias";
+  var elegidasCat = {};
+
+  function guardarCatsLocal(){
+    try{ localStorage.setItem(CLAVE_CATS, JSON.stringify(Object.keys(elegidasCat))); }
+    catch(e){ /* navegador sin localStorage: no pasa nada, se pierde al cerrar */ }
+  }
+
+  function leerCatsLocal(){
+    try{
+      var v = JSON.parse(localStorage.getItem(CLAVE_CATS) || "[]");
+      if(v && v.length) v.forEach(function(id){ elegidasCat[String(id)] = true; });
+    }catch(e){ /* dato viejo o corrupto: se ignora */ }
+  }
+
+  function catsElegidas(){
+    return ofCategorias.filter(function(c){ return elegidasCat[String(c.id)]; });
+  }
+
+  // Si elegiste un departamento entero, sus subcategorías sobran: ya vienen
+  // adentro. Se sacan para no pedir dos veces lo mismo.
+  function catsAConsultar(){
+    var sel = catsElegidas();
+    return sel.filter(function(c){
+      return !(c.padreId && elegidasCat[String(c.padreId)]);
+    });
+  }
+
+  function pintarCuentaCat(){
+    var n = catsElegidas().length;
+    $("ofCuentaCat").textContent = n === 0 ? "ninguna"
+                                : n === 1 ? "1 elegida" : n + " elegidas";
+  }
+
+  function cargarCategorias(){
+    var cont = $("ofCats");
+    cont.textContent = "Cargando categorías…";
+    return api("/api/categorias").then(function(d){
+      ofCategorias = d.categorias || [];
+      if(!ofCategorias.length){
+        cont.textContent = "No se pudieron cargar las categorías.";
+        return;
+      }
+      leerCatsLocal();
+      pintarCategorias();
+    }, function(e){
+      cont.textContent = "Error al cargar categorías: " + e.message;
+    });
+  }
+
+  function pintarCategorias(){
+    var cont = $("ofCats");
+    var html = "", abierto = false;
+
+    ofCategorias.forEach(function(c){
+      var id = String(c.id);
+      var marcado = elegidasCat[id] ? " checked" : "";
+      if(!c.padre){
+        if(abierto) html += '</div>';
+        html += '<div class="cat-dep" data-dep="' + esc(c.nombre.toLowerCase()) + '">';
+        abierto = true;
+        html += '<label class="cat-l dep"><input type="checkbox" data-cat="' + esc(id)
+              + '"' + marcado + '><span>' + esc(c.nombre) + '</span></label>';
+      }else{
+        html += '<label class="cat-l hijo" data-hijo="' + esc(c.nombre.toLowerCase())
+              + '"><input type="checkbox" data-cat="' + esc(id) + '"' + marcado
+              + '><span>' + esc(c.nombre) + '</span></label>';
+      }
+    });
+    if(abierto) html += '</div>';
+    cont.innerHTML = html;
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-cat]"), function(chk){
+      chk.onchange = function(){
+        var id = chk.getAttribute("data-cat");
+        if(chk.checked) elegidasCat[id] = true; else delete elegidasCat[id];
+        guardarCatsLocal();
+        pintarCuentaCat();
+      };
+    });
+    pintarCuentaCat();
+    filtrarCategorias();
+  }
+
+  function filtrarCategorias(){
+    var q = ($("ofFiltroCat").value || "").trim().toLowerCase();
+    Array.prototype.forEach.call($("ofCats").querySelectorAll(".cat-dep"), function(dep){
+      if(!q){ dep.classList.remove("oculto"); return; }
+      var hayDep = (dep.getAttribute("data-dep") || "").indexOf(q) >= 0;
+      var visibles = 0;
+      Array.prototype.forEach.call(dep.querySelectorAll(".cat-l.hijo"), function(h){
+        var ok = hayDep || (h.getAttribute("data-hijo") || "").indexOf(q) >= 0;
+        h.classList.toggle("oculto", !ok);
+        if(ok) visibles++;
+      });
+      dep.classList.toggle("oculto", !hayDep && !visibles);
+    });
+  }
+
+  function marcarTodas(v){
+    ofCategorias.forEach(function(c){
+      // "Todas" marca sólo los departamentos: alcanza para cubrir todo el sitio.
+      if(v && !c.padre) elegidasCat[String(c.id)] = true;
+      if(!v) delete elegidasCat[String(c.id)];
+    });
+    guardarCatsLocal();
+    pintarCategorias();
+  }
+
+  // ---- Progreso de la búsqueda ----
+  // No se sabe de antemano cuántas páginas tiene una categoría, así que la
+  // barra avanza por categorías terminadas y, dentro de la que está en curso,
+  // por tramos leídos con un techo del 90% de su porción: nunca retrocede ni
+  // se pasa. Las rayas en movimiento avisan que sigue trabajando.
+  var TRAMO_OF = 6;              // páginas por pedido (mismo tope que el server)
+  var ofCancelado = false;
+  var ultimoPintado = 0;
+
+  // Redibujar 100 tarjetas en cada tramo cuesta más de lo que aporta.
+  // Durante la carga se hace como mucho cada medio segundo; al final va el
+  // dibujo definitivo igual.
+  function pintarSeguido(){
+    var ahora = Date.now();
+    if(ahora - ultimoPintado < 500) return;
+    ultimoPintado = ahora;
+    pintarOfertas();
+  }
+
+  function pintarCarga(pct, txt, sub, listo){
+    var caja = $("ofCargando");
+    caja.classList.remove("oculto");
+    caja.classList.toggle("listo", !!listo);
+    $("ofCargaBar").style.width = Math.max(0, Math.min(100, pct)) + "%";
+    $("ofCargaTxt").textContent = txt;
+    $("ofCargaSub").textContent = sub || "";
+    $("ofCancelar").classList.toggle("oculto", !!listo);
+    $("progreso").style.width = Math.round(pct) + "%";
+  }
+
+  function buscarOfertas(){
+    if(ofBuscando) return;
+    var lista = catsAConsultar();
+    if(!lista.length){ aviso("Marcá al menos una categoría."); return; }
+
+    ofertas = [];
+    ofPagina = 1;
+    ofBuscando = true;
+    ofUsado = true;
+    ofCancelado = false;
+    avisoGuardado("ofertas", null);   // lo que viene es fresco: el cartel sobra
+    $("ofBuscar").disabled = true;
+    $("ofToolbar").classList.remove("oculto");
+    $("ofResumen").classList.remove("oculto");
+    $("progreso").classList.add("activo");
+
+    var hechas = 0;                 // categorías terminadas
+    var vistos = {};                // un producto puede estar en varias categorías
+    var revisados = 0;              // productos mirados en total
+    var porCat = 100 / lista.length;
+    var arranque = Date.now();
+
+    function progreso(c, tramos){
+      // Dentro de la categoría en curso, un avance que se acerca al 90% de su
+      // porción sin llegar nunca: no hay forma de saber cuánto falta.
+      var dentro = (1 - Math.pow(0.72, tramos)) * 0.9;
+      var seg = Math.round((Date.now() - arranque) / 1000);
+      pintarCarga(hechas * porCat + dentro * porCat,
+        "Buscando en " + c.nombre + " · categoría " + (hechas + 1) + " de " + lista.length,
+        revisados.toLocaleString("es-AR") + " productos revisados · "
+        + ofertas.length + " ofertas encontradas · " + seg + "s");
+    }
+
+    // Una categoría se trae de a tramos, encadenados: cada respuesta mueve la
+    // barra y dibuja lo que llegó, así la pantalla nunca queda congelada.
+    function traerCategoria(c){
+      var desde = 0, tramos = 0;
+
+      function paso(){
+        if(ofCancelado) return Promise.resolve();
+        return api("/api/ofertas", { cat:c.id, desde:desde, paginas:TRAMO_OF })
+          .then(function(d){
+            tramos++;
+            desde += (d.leidas || TRAMO_OF);
+            revisados += (d.productos || 0);
+            (d.items || []).forEach(function(p){
+              if(vistos[p.id]) return;
+              vistos[p.id] = true;
+              ofertas.push(p);
+            });
+            progreso(c, tramos);
+            pintarSeguido();
+            if(d.fin || !d.leidas) return;
+            return paso();
+          }, function(){
+            /* un tramo que falla corta esa categoría, no toda la búsqueda */
+          });
+      }
+      return paso();
+    }
+
+    var cadena = Promise.resolve();
+    lista.forEach(function(c){
+      cadena = cadena.then(function(){
+        if(ofCancelado) return;
+        progreso(c, 0);
+        return traerCategoria(c).then(function(){
+          hechas++;              // recién ahora la porción de esta categoría es entera
+          progreso(c, 0);
+        });
+      });
+    });
+
+    cadena.then(function(){
+      ofBuscando = false;
+      $("ofBuscar").disabled = false;
+      $("progreso").classList.remove("activo");
+      var seg = Math.round((Date.now() - arranque) / 1000);
+      pintarCarga(100,
+        ofCancelado ? "Búsqueda cancelada" : "Listo",
+        ofertas.length + " ofertas de " + revisados.toLocaleString("es-AR")
+        + " productos revisados · " + seg + "s", true);
+      aviso(ofertas.length + " ofertas encontradas."
+            + (ofertas.length ? " Quedaron guardadas en la carpeta." : ""));
+      pintarOfertas();
+      // Ésta es la búsqueda cara: recorrer categorías enteras tarda minutos.
+      // Se guarda aunque la hayas cancelado: lo que llegó, llegó.
+      if(ofertas.length){
+        guardarSesion("ofertas", {
+          items: ofertas,
+          cats: lista.map(function(c){ return c.nombre; }).join(", "),
+          revisados: revisados
+        });
+      }
+    });
+  }
+
+  // Descuento real de un producto, para filtrar y ordenar.
+  function descuentoDe(p){
+    var pr = promoUnitaria(p);
+    return Math.max(p.desc || 0, pr ? pr.off : 0);
+  }
+
+  function ofertasFiltradas(){
+    var txt = ($("ofTexto").value || "").trim().toLowerCase();
+    var min = +$("ofDesc").value || 0;
+    var orden = $("ofOrden").value;
+
+    var lista = ofertas.filter(function(p){
+      // Con el selector apagado, lo que sólo tiene promo de Tarjeta o Cuenta
+      // Digital deja de ser oferta y desaparece de la pantalla.
+      if(!esOferta(p)) return false;
+      if(min && descuentoDe(p) < min) return false;
+      if(txt && (p.nombre + " " + p.marca + " " + (p.cat || "")).toLowerCase().indexOf(txt) < 0) return false;
+      return true;
+    });
+
+    function precioVer(p){ var x = promoUnitaria(p); return x ? x.unitario : p.precio; }
+
+    lista.sort(function(a, b){
+      if(orden === "precio")  return precioVer(a) - precioVer(b);
+      if(orden === "nombre")  return a.nombre.localeCompare(b.nombre, "es");
+      if(orden === "medida"){
+        var ma = porMedida(a), mb = porMedida(b);
+        if(!ma && !mb) return 0;
+        if(!ma) return 1;
+        if(!mb) return -1;
+        if(ma.tipo !== mb.tipo) return ma.tipo < mb.tipo ? -1 : 1;
+        return ma.valor - mb.valor;
+      }
+      return descuentoDe(b) - descuentoDe(a);
+    });
+    return lista;
+  }
+
+  // Se muestran TODAS las ofertas, pero de a 100 por página: con más de eso
+  // el navegador tiene que armar cientos de tarjetas con imagen y se arrastra.
+  var POR_PAGINA_OF = 100;
+  var ofPagina = 1;
+
+  function pintarOfertas(){
+    if(!ofUsado) return;
+    var lista = ofertasFiltradas();
+    var cont = $("ofSalida");
+    var total = lista.length;
+    var paginas = Math.max(1, Math.ceil(total / POR_PAGINA_OF));
+    if(ofPagina > paginas) ofPagina = paginas;
+
+    var desde = (ofPagina - 1) * POR_PAGINA_OF;
+    var hasta = Math.min(desde + POR_PAGINA_OF, total);
+
+    $("ofResumen").innerHTML = ofBuscando
+      ? "Buscando… " + total + " ofertas hasta ahora"
+      : "<b>" + total + "</b> ofertas"
+        + (ofertas.length !== total ? " (de " + ofertas.length + " encontradas)" : "")
+        + (paginas > 1 ? " · mostrando " + (desde + 1) + "-" + hasta : "");
+
+    if(!total){
+      cont.innerHTML = ofBuscando ? "" :
+        '<div class="sin-nada">Nada por acá. Probá con otras categorías, bajá el descuento'
+        + ' mínimo o prendé el selector de Tarjeta / Cuenta Digital.</div>';
+      $("ofPaginas").classList.add("oculto");
+      return;
+    }
+
+    var mejores = mejoresPorSubcategoria(lista);
+    cont.innerHTML = lista.slice(desde, hasta)
+      .map(function(p){ return tarjetaOferta(p, mejores); }).join("");
+    conectarTarjetas(cont);
+    pintarPaginas(paginas);
+    pintarVigencia(lista);        // sobre TODAS las filtradas, no sólo la página
+  }
+
+  function pintarPaginas(paginas){
+    var barra = $("ofPaginas");
+    barra.classList.toggle("oculto", paginas <= 1);
+    if(paginas <= 1) return;
+    barra.innerHTML =
+        '<button data-pag="1"' + (ofPagina === 1 ? " disabled" : "") + '>« Primera</button>'
+      + '<button data-pag="' + (ofPagina - 1) + '"' + (ofPagina === 1 ? " disabled" : "") + '>‹ Anterior</button>'
+      + '<span class="cual">Página <b>' + ofPagina + '</b> de ' + paginas + '</span>'
+      + '<button data-pag="' + (ofPagina + 1) + '"' + (ofPagina === paginas ? " disabled" : "") + '>Siguiente ›</button>'
+      + '<button data-pag="' + paginas + '"' + (ofPagina === paginas ? " disabled" : "") + '>Última »</button>';
+
+    Array.prototype.forEach.call(barra.querySelectorAll("[data-pag]"), function(b){
+      b.onclick = function(){
+        ofPagina = Math.max(1, +b.getAttribute("data-pag"));
+        pintarOfertas();
+        $("ofSalida").scrollIntoView({ behavior:"smooth", block:"start" });
+      };
+    });
+  }
+
+  // Cualquier filtro que cambie vuelve a arrancar desde la primera página.
+  function refiltrarOfertas(){ ofPagina = 1; pintarOfertas(); }
+
+  // ---- Un color por subcategoría ----
+  // El mismo rubro tiene que dar SIEMPRE el mismo color, así que sale de un
+  // hash del nombre, no de la posición en la lista. Saturación y luminosidad
+  // fijas: cambia sólo el tono, y así ninguno queda ilegible ni desteñido.
+  var COLORES_CAT = {};
+
+  function colorCat(nombre){
+    var k = normTxt(nombre || "").trim();
+    if(!k) return "var(--verde)";
+    if(COLORES_CAT[k]) return COLORES_CAT[k];
+    var h = 0;
+    for(var i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) % 100000;
+    COLORES_CAT[k] = "hsl(" + (h % 360) + ",62%,44%)";
+    return COLORES_CAT[k];
+  }
+
+  // "Enlatados › Conservas de fruta" → "Conservas de fruta": el color va por la
+  // subcategoría, que es la que de verdad distingue una góndola de otra.
+  function subcategoria(cat){
+    var t = String(cat || "").split("›");
+    return t[t.length - 1].trim();
+  }
+
+  // Dentro de cada subcategoría, cuál es el que más rinde por kilo/litro/
+  // unidad/metro. Sólo compara lo que se mide igual (kilos con kilos, litros
+  // con litros) y sólo marca si hay con qué comparar: al menos otro producto
+  // de esa misma subcategoría medido igual. Se calcula sobre TODO lo que está
+  // filtrado en pantalla, no sólo la página que se ve.
+  function mejoresPorSubcategoria(lista){
+    var grupos = {};
+    lista.forEach(function(p){
+      var pm = porMedida(p);
+      if(!pm) return;
+      var clave = subcategoria(p.cat) + "|" + pm.tipo;
+      (grupos[clave] = grupos[clave] || []).push({ p:p, pm:pm });
+    });
+    var mejores = {};
+    Object.keys(grupos).forEach(function(k){
+      var g = grupos[k];
+      if(g.length < 2) return;
+      var mejor = g.reduce(function(a, b){ return b.pm.valor < a.pm.valor ? b : a; });
+      mejores[mejor.p.id] = mejor.pm;
+    });
+    return mejores;
+  }
+
+  function tarjetaOferta(p, mejores){
+    var soloTarj = soloPorTarjeta(p);
+    var sub = subcategoria(p.cat);
+    // El que más rinde de su subcategoría no lleva cartel: se pinta de amarillo
+    // (.oc.mejor) y la explicación va en el title, para no sumarle otra línea.
+    var pmMejor = mejores && mejores[p.id];
+    var h = '<div class="oc' + (pmMejor ? " mejor" : "") + '"'
+          + ' style="--franja:' + colorCat(sub) + '"'
+          + (pmMejor ? ' title="Mejor precio por ' + pmMejor.uni.nombre + ' entre los «'
+                + esc(sub) + '» que estás viendo: ' + plata(pmMejor.valor)
+                + ' por ' + pmMejor.uni.nombre + '"' : '')
+          + '>'
+          + '<div class="oc-top">'
+          + (p.img ? '<img class="thumb" src="' + esc(p.img) + '" alt="" loading="lazy">' : '')
+          + '<div class="datos">'
+          + (p.cat ? '<div class="oc-cat" title="' + esc(p.cat) + '">' + esc(sub) + '</div>' : '')
+          + '<div class="oc-nombre"><a href="' + esc(p.link) + '" target="_blank" rel="noopener">'
+          + esc(p.nombre) + '</a></div>'
+          + '</div></div>'
+          + (soloTarj ? '<span class="oc-tarj">SÓLO CON TARJETA</span>' : '')
+          + bloquePrecios(p);
+
+    var chips = (p.promos || []).map(function(t){ return '<span class="promo">' + esc(t) + '</span>'; });
+    if(incluirTarjeta){
+      (p.promosTarjeta || []).forEach(function(t){
+        chips.push('<span class="promo tarjeta on">' + esc(t) + '</span>');
+      });
+    }
+
+    // Todo lo de abajo va en un mismo bloque para poder pegarlo al pie.
+    h += '<div class="oc-pie">'
+       + (chips.length ? '<div class="promos">' + chips.join("") + '</div>' : '')
+       + filaCarrito(p)
+       + '</div>';
+
+    return h + '</div>';
+  }
+
+  // ---------- Lista ----------
+  function leerLista(){
+    return $("lista").value.split("\n")
+      .map(function(l){ return l.trim(); })
+      .filter(function(l){ return l && l.charAt(0) !== "#"; });
+  }
+
+  function actualizarConteo(){
+    var n = leerLista().length;
+    $("conteo").textContent = n + (n === 1 ? " artículo" : " artículos");
+  }
+
+  function plegar(abrir){
+    $("panelLista").classList.toggle("abierto", abrir);
+    $("cuerpoLista").classList.toggle("oculto", !abrir);
+    $("btnPlegar").setAttribute("aria-expanded", abrir ? "true" : "false");
+  }
+
+  function aviso(txt){ $("estado").textContent = txt; }
+
+  // ------------------------------------------------------------------
+  // La última búsqueda queda guardada en la carpeta (ultima-busqueda.json).
+  //
+  // Buscar tarda —el explorador de ofertas, minutos—, así que cerrar el
+  // navegador no tiene por qué costar otra vuelta entera. Al terminar, la
+  // pantalla le manda a Python lo que encontró; al abrir de nuevo, se rearma
+  // sola y un cartel avisa de cuándo es lo que estás viendo.
+  //
+  // Guarda PYTHON, no el navegador: así sobrevive también a cerrar la ventana
+  // negra, no depende del localStorage (que no aguanta miles de ofertas) y el
+  // archivo se puede borrar a mano para empezar de cero.
+  // ------------------------------------------------------------------
+  function guardarSesion(parte, datos){
+    // Si no se pudo escribir, la herramienta sigue funcionando igual: lo único
+    // que se pierde es poder recuperarlo después.
+    return api("/api/sesion", { parte:parte, datos:datos })
+      .then(null, function(){ return null; });
+  }
+
+  function cuandoLindo(iso){
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return "";
+    var hora = d.toLocaleTimeString("es-AR", {hour:"2-digit", minute:"2-digit"});
+    var hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    var dia = new Date(d.getTime()); dia.setHours(0, 0, 0, 0);
+    var dias = Math.round((hoy - dia) / 86400000);
+    if(dias <= 0) return "hoy a las " + hora;
+    if(dias === 1) return "ayer a las " + hora;
+    return "el " + d.toLocaleDateString("es-AR", {weekday:"long", day:"numeric", month:"long"})
+         + " a las " + hora;
+  }
+
+  // El cartel azul arriba de los resultados. Con iso vacío se esconde: eso pasa
+  // cuando lo que se ve es una búsqueda recién hecha y no hace falta aclarar nada.
+  function avisoGuardado(cual, iso, detalle){
+    var caja = $(cual === "ofertas" ? "ofAvisoGuardado" : "avisoGuardado");
+    if(!iso){ caja.classList.add("oculto"); return; }
+    // Pasado un día, los precios de Carrefour bien pueden haber cambiado.
+    var viejo = (Date.now() - new Date(iso).getTime()) > 24 * 3600 * 1000;
+    caja.classList.remove("oculto");
+    caja.classList.toggle("viejo", viejo);
+    caja.querySelector(".g-txt").innerHTML =
+        "Esto es lo <b>guardado " + esc(cuandoLindo(iso)) + "</b>"
+      + (detalle ? " · " + esc(detalle) : "")
+      + (viejo ? " · pasó más de un día, los precios pueden haber cambiado" : "");
+  }
+
+  function recuperarSesion(){
+    return api("/api/sesion").then(function(d){
+      var L = d && d.lista, O = d && d.ofertas;
+      var algo = false;
+
+      if(L && L.resultados && L.resultados.length){
+        resultados = L.resultados;
+        // Sólo se pisa el textarea si articulos.txt está vacío: el archivo manda.
+        if(L.texto && !$("lista").value.trim()){ $("lista").value = L.texto; }
+        actualizarConteo();
+        plegar(false);
+        render();
+        avisoGuardado("lista", L.guardado,
+                      L.resultados.length + (L.resultados.length === 1 ? " artículo" : " artículos"));
+        algo = true;
+      }
+
+      if(O && O.items && O.items.length){
+        ofertas = O.items;
+        ofUsado = true;
+        $("ofToolbar").classList.remove("oculto");
+        $("ofResumen").classList.remove("oculto");
+        pintarOfertas();
+        avisoGuardado("ofertas", O.guardado,
+                      O.items.length + " ofertas" + (O.cats ? " · " + O.cats : ""));
+        algo = true;
+      }
+
+      // El chip de vigencia del encabezado habla de la pantalla que estás
+      // mirando, y al abrir siempre es "Mi lista".
+      pintarVigencia(resultados.map(function(r){ return r.principal; }));
+      if(algo) aviso("Mostrando la última búsqueda guardada.");
+    }, function(){
+      /* todavía no hay nada guardado: la pantalla arranca en blanco, como siempre */
+    });
+  }
+
+  // ---------- Proceso ----------
+  function verificar(){
+    var lineas = leerLista();
+    if(!lineas.length){ aviso("La lista está vacía."); plegar(true); $("lista").focus(); return; }
+
+    resultados = [];
+    filtro = "todos"; texto = ""; $("buscador").value = "";
+    esperando = lineas.length;
+    avisoGuardado("lista", null);   // lo que viene es fresco: el cartel sobra
+    plegar(false);
+    $("btnGo").disabled = true;
+    $("progreso").classList.add("activo");
+    $("progreso").style.width = "0%";
+    render();
+
+    // Se consultan VARIOS artículos a la vez. Antes iban de a uno y una lista
+    // de 30 tardaba lo que tardaba la suma de las 30 consultas. El servidor de
+    // Python es multi-hilo, así que aguanta el paralelo sin problema.
+    // Como ahora terminan desordenados, cada resultado se lleva su posición en
+    // tu lista (res.pos) y render() ordena por ahí.
+    var siguiente = 0, hechos = 0;
+
+    function corredor(){
+      if(siguiente >= lineas.length) return Promise.resolve();
+      var pos = siguiente++;
+      var l = lineas[pos];
+
+      return api("/api/buscar", { linea: l }).then(function(res){
+        res.pos = pos;
+        elegirPrincipal(res);      // arranca mostrando el que mas rinde
+        resultados.push(res);
+      }, function(e){
+        resultados.push({ pos:pos, linea:l, desc:l, via:"-", principal:null,
+                          alternativas:[],
+                          error:"Se cortó la conexión con el programa: " + e.message });
+      }).then(function(){
+        hechos++;
+        esperando = lineas.length - hechos;
+        $("progreso").style.width = Math.round(hechos / lineas.length * 100) + "%";
+        aviso("Consultando " + hechos + " de " + lineas.length + "…");
+        render();   // las tarjetas van apareciendo a medida que llegan
+        return corredor();
+      });
+    }
+
+    var enMarcha = [];
+    for(var k = 0; k < Math.min(EN_PARALELO_ART, lineas.length); k++) enMarcha.push(corredor());
+
+    Promise.all(enMarcha).then(function(){
+      esperando = 0;
+      $("btnGo").disabled = false;
+      $("progreso").classList.remove("activo");
+      aviso("Actualizado " + new Date().toLocaleTimeString("es-AR", {hour:"2-digit", minute:"2-digit"})
+            + " · guardado en la carpeta");
+      render();
+      // Queda en disco: si cerrás el navegador, al volver a abrir está todo esto.
+      guardarSesion("lista", { texto: $("lista").value, resultados: resultados });
+    });
+  }
+
+  function cargarArchivo(){
+    return api("/api/articulos").then(function(d){
+      $("lista").value = d.texto || "";
+      actualizarConteo();
+    });
+  }
+
+  // ---------- Barra del carrito ----------
+  // Un solo viaje para todo: misma pestaña con nombre fijo, asi la segunda vez
+  // la sesion de Carrefour ya esta caliente y entra directo.
+  $("ccEnviar").onclick = function(){
+    var it = elegidos();
+    if(!it.length) return;
+    window.open(linkCarrito(it), "carritoCarrefour");
+  };
+  $("ccVaciar").onclick = function(){
+    seleccion = {};
+    pintarBarra();
+    render();
+  };
+
+  // ---------- Ampliar imagen al hacer click ----------
+  // Delegado en el documento: funciona para cualquier miniatura (principal,
+  // alternativa o del explorador de ofertas), aunque se dibuje despues de esto.
+  document.addEventListener("click", function(e){
+    var img = e.target.closest("img.thumb, img.alt-thumb");
+    if(!img || !img.src) return;
+    $("lightboxImg").src = img.src;
+    $("lightbox").classList.remove("oculto");
+  });
+  $("lightbox").onclick = function(){ $("lightbox").classList.add("oculto"); };
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape") $("lightbox").classList.add("oculto");
+  });
+
+  // ---------- Arranque ----------
+  $("btnGo").onclick = verificar;
+  $("lista").oninput = actualizarConteo;
+  $("lista").onkeydown = function(e){
+    if(e.key === "Enter" && (e.ctrlKey || e.metaKey)) verificar();
+  };
+  $("btnPlegar").onclick = function(){
+    plegar(!$("panelLista").classList.contains("abierto"));
+  };
+  $("btnRecargar").onclick = function(){ cargarArchivo().then(function(){ aviso("Lista recargada desde el archivo."); }); };
+  $("btnGuardar").onclick = function(){
+    var b = $("btnGuardar");
+    b.disabled = true;
+    api("/api/guardar", { texto: $("lista").value }).then(function(d){
+      b.disabled = false;
+      aviso(d.ok ? "Lista guardada." : "No se pudo guardar: " + (d.error || ""));
+    }, function(){ b.disabled = false; aviso("No se pudo guardar."); });
+  };
+
+  // ---------- Botones de los carteles de "guardado" ----------
+  // "Buscar de nuevo" repite la búsqueda; "Descartar" borra lo guardado del
+  // archivo y deja la pantalla como recién abierta.
+  $("avisoGuardado").querySelector(".g-nuevo").onclick = function(){ verificar(); };
+  $("avisoGuardado").querySelector(".g-borrar").onclick = function(){
+    resultados = [];
+    guardarSesion("lista", null);
+    avisoGuardado("lista", null);
+    render();
+    plegar(true);
+    aviso("Se borró lo guardado de tu lista.");
+  };
+
+  $("ofAvisoGuardado").querySelector(".g-nuevo").onclick = function(){ buscarOfertas(); };
+  $("ofAvisoGuardado").querySelector(".g-borrar").onclick = function(){
+    ofertas = [];
+    ofUsado = false;
+    guardarSesion("ofertas", null);
+    avisoGuardado("ofertas", null);
+    $("ofSalida").innerHTML = "";
+    $("ofResumen").classList.add("oculto");
+    $("ofToolbar").classList.add("oculto");
+    $("ofPaginas").classList.add("oculto");
+    $("ofCargando").classList.add("oculto");
+    aviso("Se borraron las ofertas guardadas.");
+  };
+
+  Array.prototype.forEach.call(document.querySelectorAll(".chip[data-f]"), function(c){
+    c.onclick = function(){ filtro = c.getAttribute("data-f"); render(); };
+  });
+  $("buscador").oninput = function(){ texto = this.value.trim().toLowerCase(); render(); };
+
+  // El selector de Tarjeta esta duplicado (una copia en cada pantalla) pero la
+  // verdad es una sola: incluirTarjeta. Cambiar cualquiera actualiza el otro.
+  function setTarjeta(v){
+    incluirTarjeta = !!v;
+    $("chkTarjeta").checked = incluirTarjeta;
+    $("ofChkTarjeta").checked = incluirTarjeta;
+    $("swTarjeta").classList.toggle("on", incluirTarjeta);
+    $("ofSwTarjeta").classList.toggle("on", incluirTarjeta);
+    // Cambian los precios efectivos, asi que se rehace todo lo que depende de
+    // ellos: quien rinde mas, el principal y el orden. Sin volver a consultar.
+    resultados.forEach(function(r){
+      elegirPrincipal(r);
+      r.alternativas = porPrecio(r.alternativas);
+    });
+    render();
+    pintarOfertas();
+  }
+  $("chkTarjeta").onchange   = function(){ setTarjeta(this.checked); };
+  $("ofChkTarjeta").onchange = function(){ setTarjeta(this.checked); };
+
+  // ---------- Explorador de ofertas ----------
+  $("tabLista").onclick   = function(){ vista("lista"); };
+  $("tabOfertas").onclick = function(){ vista("ofertas"); };
+  $("ofBuscar").onclick   = buscarOfertas;
+  $("ofTexto").oninput    = refiltrarOfertas;
+  $("ofDesc").onchange    = refiltrarOfertas;
+  $("ofOrden").onchange   = refiltrarOfertas;
+  $("ofFiltroCat").oninput = filtrarCategorias;
+  $("ofTodas").onclick    = function(){ marcarTodas(true); };
+  $("ofNinguna").onclick  = function(){ marcarTodas(false); };
+  $("ofCancelar").onclick = function(){
+    ofCancelado = true;
+    $("ofCargaTxt").textContent = "Cancelando…";
+  };
+
+  // Guardar la selección en categorias.txt, para recuperarla cuando quieras.
+  $("ofGuardarCats").onclick = function(){
+    var b = $("ofGuardarCats");
+    var cats = catsElegidas().map(function(c){
+      return { id:c.id, nombre:(c.padre ? c.padre + " › " : "") + c.nombre };
+    });
+    if(!cats.length){ aviso("No hay ninguna categoría marcada."); return; }
+    b.disabled = true;
+    api("/api/guardar-cats", { cats:cats }).then(function(d){
+      b.disabled = false;
+      aviso(d.ok ? ("Selección guardada en categorias.txt (" + cats.length + ").")
+                 : ("No se pudo guardar: " + (d.error || "")));
+    }, function(){ b.disabled = false; aviso("No se pudo guardar la selección."); });
+  };
+
+  // Cargar la que quedó guardada en el archivo (pisa lo que haya marcado).
+  $("ofCargarCats").onclick = function(){
+    var b = $("ofCargarCats");
+    b.disabled = true;
+    api("/api/cats-guardadas").then(function(d){
+      b.disabled = false;
+      var ids = d.ids || [];
+      if(!ids.length){
+        aviso("No hay nada guardado todavía en categorias.txt.");
+        return;
+      }
+      elegidasCat = {};
+      ids.forEach(function(id){ elegidasCat[String(id)] = true; });
+      guardarCatsLocal();
+      if(ofCategorias.length) pintarCategorias();
+      aviso("Selección cargada del archivo (" + ids.length + " categorías).");
+    }, function(e){ b.disabled = false; aviso("No se pudo leer el archivo: " + e.message); });
+  };
+
+  // Si abriste el HTML con doble clic (file://) no hay servidor detras.
+  api("/api/ping").then(function(){
+    $("app").classList.remove("oculto");
+    // Primero la lista de artículos (el archivo manda) y después lo guardado
+    // de la última búsqueda, que es lo que rearma la pantalla.
+    return cargarArchivo().then(recuperarSesion, recuperarSesion);
+  }, function(){
+    $("sinServidor").classList.remove("oculto");
+  });
+})();
+</script>
+</body>
+</html>

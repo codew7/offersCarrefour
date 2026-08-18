@@ -1,0 +1,38 @@
+# Categorías elegidas en el explorador de ofertas.
+# Una por línea: id | nombre.  Con # al principio se ignora.
+
+161 | Almacén
+162 | Almacén › Aceites y vinagres
+168 | Almacén › Pastas secas
+172 | Almacén › Arroz y legumbres
+176 | Almacén › Harinas
+183 | Almacén › Enlatados y Conservas
+190 | Almacén › Sal, aderezos y saborizadores
+195 | Almacén › Caldos, sopas y puré
+658 | Almacén › Comidas instantáneas
+232 | Desayuno y merienda › Yerba
+233 | Desayuno y merienda › Café
+242 | Desayuno y merienda › Azúcar y endulzantes
+246 | Desayuno y merienda › Mermeladas y otros dulces
+293 | Lácteos y productos frescos › Leches
+299 | Lácteos y productos frescos › Yogures
+302 | Lácteos y productos frescos › Mantecas, margarinas y levaduras
+304 | Lácteos y productos frescos › Cremas de leche
+307 | Lácteos y productos frescos › Tapas y pastas frescas
+309 | Lácteos y productos frescos › Salchichas
+310 | Lácteos y productos frescos › Quesos
+348 | Congelados › Hamburguesas y medallones
+349 | Congelados › Nuggets y rebozados
+350 | Congelados › Papas
+352 | Congelados › Frutas y vegetales congelados
+356 | Congelados › Comidas y panificados
+357 | Congelados › Pescados y mariscos
+360 | Limpieza › Limpieza de la ropa
+377 | Limpieza › Limpieza de cocina
+385 | Limpieza › Rollos de cocina y servilletas
+386 | Limpieza › Papeles higiénicos
+403 | Perfumería y farmacia › Cuidado del cabello
+412 | Perfumería y farmacia › Cuidado dental
+422 | Perfumería y farmacia › Protección femenina
+435 | Perfumería y farmacia › Antitranspirantes y desodorantes
+444 | Perfumería y farmacia › Algodones e hisopos
