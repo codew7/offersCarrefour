@@ -216,7 +216,7 @@
   .m-baja{background:#fdecea;color:var(--rojo)}
 
   .cuerpo{display:flex;gap:14px;align-items:center}
-  .thumb{width:84px;height:84px;object-fit:contain;border-radius:10px;flex-shrink:0;
+  .thumb{width:109px;height:109px;object-fit:contain;border-radius:10px;flex-shrink:0;
          background:#f8fafc;cursor:zoom-in}
   .datos{flex:1;min-width:0}
   .nombre{font-weight:650;font-size:16px;line-height:1.3}
@@ -261,7 +261,7 @@
   .alt{display:flex;gap:12px;align-items:center;font-size:13.5px;padding:8px 8px;border-radius:8px}
   .alt:hover{background:#f8fafc}
   .alt + .alt{border-top:1px solid #f1f5f9}
-  .alt-thumb{width:40px;height:40px;object-fit:contain;border-radius:8px;flex-shrink:0;
+  .alt-thumb{width:52px;height:52px;object-fit:contain;border-radius:8px;flex-shrink:0;
              background:#f8fafc;cursor:zoom-in}
   .alt .n{flex:1;min-width:0}
   .alt .n a{color:var(--texto);text-decoration:none;display:block;overflow:hidden;
@@ -305,6 +305,12 @@
                 box-shadow:0 10px 30px rgba(10,30,50,.35);max-width:calc(100% - 24px)}
   #barraCarrito.oculto{display:none}
   #barraCarrito b{font-size:15px}
+  .cc-avisa{background:#f4b400;color:#3a2a00;font-size:10.5px;font-weight:750;
+            letter-spacing:.3px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .cc-avisa.oculto{display:none}
+  /* "1 = 0,5 kg en el carrito": lo que se vende por peso no suma de a uno. */
+  .cant-nota{margin-top:5px;font-size:11px;color:var(--amarillo);font-weight:650;
+             line-height:1.25;cursor:help}
   .cc-vaciar{background:transparent;color:#a9c2d8;padding:8px 10px;font-size:12.5px}
   .cc-vaciar:hover{color:#fff}
   .cc-ir{background:var(--verde);color:#fff;padding:9px 16px;font-size:13.5px;
@@ -544,7 +550,7 @@
     .grupo{margin-top:12px;font-size:11px}
     .card{padding:13px;border-radius:12px;row-gap:10px}
     .der{padding:11px;gap:9px}
-    .thumb{width:68px;height:68px}
+    .thumb{width:88px;height:88px}
     .cuerpo{gap:11px}
     .nombre{font-size:15px}
     .precio{font-size:24px}
@@ -553,7 +559,7 @@
     /* La alternativa se lee en dos renglones: qué es arriba, cuánto sale
        y el botón abajo. En una sola línea no entraba nada. */
     .alt{flex-wrap:wrap;gap:8px;padding:9px 6px}
-    .alt-thumb{width:38px;height:38px}
+    .alt-thumb{width:49px;height:49px}
     .alt .n{flex:1 1 60%}
     .alt .p{order:2}
     .btn-usar{order:3;margin-left:auto;padding:8px 12px;font-size:12px}
@@ -610,7 +616,7 @@
     .kpi span{font-size:9.5px}
     .of-controles{grid-template-columns:1fr}
     .precio{font-size:22px}
-    .thumb{width:60px;height:60px}
+    .thumb{width:78px;height:78px}
   }
 </style>
 </head>
@@ -868,6 +874,9 @@
 <!-- Barra flotante: junta todo lo elegido y lo manda en UN solo viaje. -->
 <div id="barraCarrito" class="oculto">
   <span class="cc-txt"><b id="ccCant">0</b> <span id="ccPal">artículos</span> listos</span>
+  <!-- Carrefour SUMA lo que le mandes a lo que ya tenga: reenviar duplica. -->
+  <span id="ccReenvio" class="cc-avisa oculto"
+        title="Carrefour suma lo que mandes a lo que ya haya en el carrito. Vaciá el carrito en la web antes de reenviar.">ya enviado</span>
   <button class="cc-vaciar" id="ccVaciar">Vaciar</button>
   <button class="cc-ir" id="ccEnviar">
     <span class="cc-larga">Enviar al carrito de Carrefour</span>
@@ -893,7 +902,10 @@
   var filtro = "todos";
   var texto = "";
   var esperando = 0;          // tarjetas fantasma mientras llegan las respuestas
-  var EN_PARALELO_ART = 5;    // articulos que se consultan a la vez
+  // Articulos que se consultan a la vez. Subio de 5 a 8: ahora Python recicla
+  // las conexiones con Carrefour, asi que cada consulta de mas ya no paga el
+  // saludo de TLS. Mas arriba no rinde, empieza a demorar Carrefour.
+  var EN_PARALELO_ART = 8;
   // Apagado por defecto: las promos de Tarjeta / Cuenta Digital Carrefour
   // no cuentan como oferta hasta que vos lo pidas.
   var incluirTarjeta = false;
@@ -929,6 +941,11 @@
   function plata(n){
     if(n === null || n === undefined) return "—";
     return "$" + Number(n).toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  // Un numero corto y en criollo: 0.5 -> "0,5", 1 -> "1".
+  function numero(n){
+    return Number(n).toLocaleString("es-AR", {maximumFractionDigits:3});
   }
 
   function esc(s){
@@ -1471,7 +1488,44 @@
   // siempre sobre la misma pestaña (target con nombre fijo).
   // ------------------------------------------------------------------
   var CARREFOUR = "https://www.carrefour.com.ar";
-  var seleccion = {};        // sku -> { sku, vendedor, cant, nombre }
+  var seleccion = {};        // sku -> { sku, vendedor, cant, nombre, multiplo }
+
+  // ---- El carrito NO se pierde al refrescar ----
+  // Antes vivía sólo en memoria: un F5, o tocar sin querer "atrás", y había que
+  // volver a marcar todo. Ahora se guarda solo en el navegador, en cada cambio.
+  // Va en localStorage y no en ultima-busqueda.json a propósito: son cuatro
+  // datos por artículo (pesa nada) y es TUYO, de este navegador, no parte de la
+  // búsqueda que se sube al hosting.
+  var CLAVE_CARRITO = "carrefour.carrito";
+  var carritoEnviado = false;   // ya se mandó a Carrefour al menos una vez
+
+  function guardarCarritoLocal(){
+    try{
+      localStorage.setItem(CLAVE_CARRITO, JSON.stringify({
+        items: elegidos(), enviado: carritoEnviado, cuando: Date.now()
+      }));
+    }catch(e){ /* navegador sin localStorage: se pierde al cerrar, y nada más */ }
+  }
+
+  function leerCarritoLocal(){
+    try{
+      var d = JSON.parse(localStorage.getItem(CLAVE_CARRITO) || "null");
+      if(!d || !d.items || !d.items.length) return;
+      d.items.forEach(function(x){
+        if(!x || !x.sku) return;
+        var sku = String(x.sku);
+        seleccion[sku] = {
+          sku: sku,
+          vendedor: String(x.vendedor || "1"),
+          cant: Math.min(99, Math.max(1, parseInt(x.cant, 10) || 1)),
+          nombre: x.nombre || "",
+          multiplo: +x.multiplo || 1,
+          unidadMedida: x.unidadMedida || "un"
+        };
+      });
+      carritoEnviado = !!d.enviado;
+    }catch(e){ /* dato viejo o corrupto: se ignora y se arranca vacío */ }
+  }
 
   // OJO: para varios articulos hay que REPETIR el trio sku/qty/seller.
   // La forma "sku=1,2,3&qty=1,1,1" devuelve HTTP 400 (Bad Request).
@@ -1489,11 +1543,27 @@
     return Object.keys(seleccion).map(function(k){ return seleccion[k]; });
   }
 
+  // La cantidad que se manda sale SIEMPRE de acá: un entero entre 1 y 99.
+  function cantValida(v){
+    return Math.min(99, Math.max(1, parseInt(v, 10) || 1));
+  }
+
+  // El mismo producto puede estar en dos tarjetas a la vez (dos líneas de tu
+  // lista que dieron lo mismo, o repetido en el explorador). Como el carrito se
+  // indexa por SKU, todas esas casillas tienen que decir el mismo número: si no,
+  // marcabas 3 en una, la otra seguía diciendo 1 y no se sabía cuál mandaba.
+  function sincronizarCant(sku, n){
+    Array.prototype.forEach.call(
+      document.querySelectorAll('[data-cant="' + sku + '"]'),
+      function(otro){ if(+otro.value !== n) otro.value = n; });
+  }
+
   function pintarBarra(){
     var n = elegidos().length;
     $("barraCarrito").classList.toggle("oculto", n === 0);
     $("ccCant").textContent = n;
     $("ccPal").textContent = n === 1 ? "artículo" : "artículos";
+    $("ccReenvio").classList.toggle("oculto", !(n && carritoEnviado));
   }
 
   // El boton se identifica por SKU, no por posicion en la lista: asi la misma
@@ -1515,12 +1585,23 @@
     var pr = promoUnitaria(p);
     var ya = seleccion[p.sku];
     var cant = ya ? ya.cant : (pr ? pr.unidades : 1);
+
+    // Aviso de "múltiplo": lo que Carrefour vende por peso suma menos de una
+    // unidad por vez (pedís 1 y en el carrito aparece 0,5 kg). Es una de las
+    // razones por las que lo marcado acá y lo que quedaba allá no coincidían.
+    var m = +p.multiplo || 1;
+    var nota = (m && m !== 1)
+      ? '<div class="cant-nota" title="Carrefour vende este producto por ' + esc(p.unidadMedida || "unidad")
+          + ': cada unidad que pidas suma ' + numero(m) + ' ' + esc(p.unidadMedida || "un") + ' al carrito.">'
+          + '1 = ' + numero(m) + ' ' + esc(p.unidadMedida || "un") + ' en el carrito</div>'
+      : '';
+
     return '<div class="acciones">'
-         + '<input class="cant" type="number" min="1" max="99" value="' + cant + '" '
+         + '<input class="cant" type="number" min="1" max="99" step="1" value="' + cant + '" '
          + 'data-cant="' + esc(p.sku) + '" title="Cantidad" aria-label="Cantidad">'
          + '<button class="btn-cart' + (ya ? " puesto" : "") + '" data-cart="' + esc(p.sku) + '">'
          + (ya ? "✓ Agregado · quitar" : "Agregar al carrito") + '</button>'
-         + '</div>';
+         + '</div>' + nota;
   }
 
   function cajaRebuscar(idx, linea){
@@ -1545,13 +1626,20 @@
           b.classList.remove("puesto");
           b.textContent = "Agregar al carrito";
         }else{
-          var inp = cont.querySelector('[data-cant="' + sku + '"]');
-          var n = Math.min(99, Math.max(1, parseInt(inp && inp.value, 10) || 1));
-          seleccion[sku] = { sku:sku, vendedor:p.vendedor || "1", cant:n, nombre:p.nombre };
+          // La casilla de ESTE botón, no la primera del documento con ese SKU:
+          // con el producto repetido en dos tarjetas se leía la cantidad de la
+          // otra y por eso al carrito llegaba un número que no era el que veías.
+          var inp = b.parentNode.querySelector("[data-cant]")
+                 || cont.querySelector('[data-cant="' + sku + '"]');
+          var n = cantValida(inp && inp.value);
+          seleccion[sku] = { sku:sku, vendedor:p.vendedor || "1", cant:n, nombre:p.nombre,
+                             multiplo:+p.multiplo || 1, unidadMedida:p.unidadMedida || "un" };
+          sincronizarCant(sku, n);
           b.classList.add("puesto");
           b.textContent = "✓ Agregado · quitar";
         }
         pintarBarra();
+        guardarCarritoLocal();
       };
     });
 
@@ -1574,11 +1662,31 @@
     });
 
     // Cambiar la cantidad de algo ya marcado lo actualiza en el acto.
+    //
+    // Va con "input" y no con "change": change recién avisa cuando salís del
+    // campo, así que si escribías 3 y las tarjetas se volvían a dibujar (pasa
+    // en cada artículo que llega) el 3 se perdía sin que nada lo avisara. Ésa
+    // era la diferencia más común entre lo marcado acá y lo que llegaba allá.
     Array.prototype.forEach.call(cont.querySelectorAll("[data-cant]"), function(inp){
-      inp.onchange = function(){
+      inp.oninput = function(){
         var sku = inp.getAttribute("data-cant");
+        if(inp.value === "") return;          // te estás por arrepentir: no se toca
+        var n = cantValida(inp.value);
         if(seleccion[sku]){
-          seleccion[sku].cant = Math.min(99, Math.max(1, parseInt(inp.value, 10) || 1));
+          seleccion[sku].cant = n;
+          sincronizarCant(sku, n);
+          guardarCarritoLocal();
+        }
+      };
+      // Al salir del campo se normaliza lo que quedó escrito (vacío, 0, "abc").
+      inp.onblur = function(){
+        var sku = inp.getAttribute("data-cant");
+        var n = cantValida(inp.value);
+        inp.value = n;
+        if(seleccion[sku] && seleccion[sku].cant !== n){
+          seleccion[sku].cant = n;
+          sincronizarCant(sku, n);
+          guardarCarritoLocal();
         }
       };
     });
@@ -2614,12 +2722,41 @@
   $("ccEnviar").onclick = function(){
     var it = elegidos();
     if(!it.length) return;
-    window.open(linkCarrito(it), "carritoCarrefour");
+
+    // OJO: /checkout/cart/add SUMA a lo que ya haya en el carrito de Carrefour,
+    // no lo reemplaza. Mandar dos veces el mismo carrito deja el doble de todo.
+    // Ésa es la explicación de casi todas las diferencias entre lo marcado acá
+    // y lo que después aparece allá.
+    if(carritoEnviado){
+      var ok = window.confirm(
+        "Este carrito ya se envió una vez.\n\n" +
+        "Carrefour SUMA lo que mandes a lo que ya tenga en el carrito: no lo " +
+        "reemplaza. Si volvés a enviar sin vaciar el carrito en la web, las " +
+        "cantidades quedan duplicadas.\n\n¿Enviar igual?");
+      if(!ok) return;
+    }
+
+    // Muchos artículos = URL muy larga. Pasado cierto punto se corta sola y
+    // llegan menos cosas de las que mandaste, sin ningún error a la vista.
+    var url = linkCarrito(it);
+    if(url.length > 1900){
+      window.alert("Son demasiados artículos para un solo envío (" + it.length + ").\n\n" +
+                   "Mandá una parte, sacá lo que ya enviaste y mandá el resto.");
+      return;
+    }
+
+    window.open(url, "carritoCarrefour");
+    carritoEnviado = true;
+    guardarCarritoLocal();
+    pintarBarra();
   };
   $("ccVaciar").onclick = function(){
     seleccion = {};
+    carritoEnviado = false;
+    guardarCarritoLocal();
     pintarBarra();
     render();
+    pintarOfertas();     // el explorador también tiene botones que desmarcar
   };
 
   // ---------- Ampliar imagen al hacer click ----------
@@ -2819,6 +2956,12 @@
     lector.onerror = function(){ aviso("No se pudo abrir el archivo."); };
     lector.readAsText(f);
   };
+
+  // ---------- Lo que quedo marcado para el carrito ----------
+  // Se lee antes de dibujar nada: asi los botones ya salen en "✓ Agregado" y la
+  // barra flotante aparece sola con lo que habias elegido antes de refrescar.
+  leerCarritoLocal();
+  pintarBarra();
 
   // ---------- Arranque de verdad ----------
   // Si no contesta /api/ping no hay Python detrás: o abriste el HTML con doble

@@ -77,15 +77,19 @@ Detalles que conviene no romper:
 - **Progreso en vivo.** `render()` se llama después de cada artículo, así las tarjetas
   aparecen de a una. Los que faltan se dibujan como esqueletos (`.skel`) y la barra
   `#progreso` avanza arriba de todo.
-- **Cada alternativa lleva su foto** (`.alt-thumb`, 40 px), igual que el principal
-  (`.thumb`, 84 px). Sale del mismo `a.img` que ya mandaba Python; no hubo que tocar el
+- **Cada alternativa lleva su foto** (`.alt-thumb`, 52 px), igual que el principal
+  (`.thumb`, 109 px). Los dos crecieron un 30% a pedido del usuario, para poder
+  reconocer el envase de un vistazo; en celular bajan a 88 y 49 px, y a 78 px por
+  debajo de 380 px de ancho. Salen del mismo `a.img` que ya mandaba Python; no hubo que tocar el
   backend.
-- **Los artículos se consultan de a `EN_PARALELO_ART = 5`.** Un grupo de "corredores"
+- **Los artículos se consultan de a `EN_PARALELO_ART = 8`.** Un grupo de "corredores"
   que van tomando la siguiente línea libre (`corredor()` se llama a sí misma al terminar).
   El servidor de Python es `ThreadingHTTPServer`, así que aguanta el paralelo. Por eso
   cada resultado guarda `pos`: sin eso, las tarjetas quedaban en el orden en que
-  contestó Carrefour y no en el de tu lista. Subir mucho ese número no ayuda: Carrefour
-  empieza a demorar los pedidos.
+  contestó Carrefour y no en el de tu lista. Era 5 y subió a 8 cuando Python empezó a
+  reciclar las conexiones (ver «Velocidad: por qué antes tardaba tanto»): cada consulta
+  de más ya no paga el saludo de TLS. **Más arriba de 8 no rinde**: el que empieza a
+  demorar es Carrefour.
 - **La franja de color de la tarjeta la pinta `.card.oferta::after`**, no un `border-left`
   (con `border-radius` queda mal). **Verde si es una oferta real, amarilla si es sólo por
   tarjeta/cuenta** (`soloPorTarjeta()`). El cartelito `.flag` sigue el mismo criterio:
@@ -211,6 +215,56 @@ que **no** reabre el problema de CORS.
 
 > **No volver al link por artículo.** Es el camino lento y ya se probó.
 
+### El carrito no se pierde al refrescar
+
+Antes vivía sólo en memoria: un F5, o tocar sin querer "atrás", y había que volver a
+marcar todo. Ahora `seleccion` se guarda sola en `localStorage["carrefour.carrito"]`
+en cada cambio (marcar, desmarcar, cambiar la cantidad, vaciar), y `leerCarritoLocal()`
+la restaura **antes de dibujar nada**, así los botones ya salen en "✓ Agregado" y la
+barra flotante aparece sola.
+
+Va en el navegador y **no** en `ultima-busqueda.json` a propósito: son cuatro datos por
+artículo (pesa nada), es de este navegador y no forma parte de la búsqueda que se sube
+al hosting. Todo envuelto en `try/catch`: sin `localStorage` simplemente no persiste.
+
+Un artículo marcado sobrevive aunque después no esté en pantalla — `seleccion` guarda
+`sku`, `vendedor`, `cant` y `nombre`, que es todo lo que necesita `linkCarrito()`.
+
+### Las cantidades: tres cosas que las hacían no coincidir
+
+El usuario reportó que lo que marcaba acá y lo que aparecía en el carrito de Carrefour
+no siempre daba igual. Eran tres causas distintas, las tres arregladas:
+
+**1. La cantidad tipeada se perdía en el re-render.** El campo usaba `onchange`, que
+recién avisa cuando salís del campo. Como `render()` se llama después de *cada* artículo
+que llega, si escribías "3" mientras la búsqueda seguía, la tarjeta se volvía a dibujar
+con el valor viejo y el 3 desaparecía sin que nada lo avisara. Ahora es `oninput`
+(avisa al tipear) más un `onblur` que normaliza lo que quedó escrito (vacío, 0, "abc").
+
+**2. El mismo producto en dos tarjetas.** `conectarTarjetas()` buscaba la casilla con
+`cont.querySelector('[data-cant="<sku>"]')`, o sea **la primera del documento** con ese
+SKU. Con el producto repetido (dos líneas de tu lista que dieron lo mismo, o repetido
+en el explorador) se leía la cantidad de la otra tarjeta. Ahora se lee la casilla
+hermana del botón (`b.parentNode`), y `sincronizarCant()` deja todas las copias
+diciendo el mismo número — el carrito se indexa por SKU, así que hay uno solo.
+
+**3. Los productos que se venden por peso (`unitMultiplier`).** Ésta es la grande y no
+era un bug del código: es cómo funciona Carrefour. "Jamón cocido Paladini x kg" tiene
+`unitMultiplier: 0.2`; pedís 1 y en el carrito aparecen **0,2 kg**. Pasa con fiambres,
+frutas, verduras, carne y quesos de horma. `parsear()` ahora manda `multiplo` y
+`unidadMedida`, y la tarjeta lo dice abajo del botón: **"1 = 0,2 kg en el carrito"**.
+
+> **Y una cuarta, que no se puede arreglar del todo:** `/checkout/cart/add` **SUMA** a
+> lo que ya haya en el carrito de Carrefour, no lo reemplaza. Mandar dos veces el mismo
+> carrito deja el doble de todo. Como no hay forma de fijar una cantidad absoluta desde
+> la URL, la app se acuerda de si ya envió (`carritoEnviado`), muestra el chip amarillo
+> "ya enviado" en la barra flotante y pide confirmación antes de reenviar. Si de verdad
+> querés reenviar, hay que vaciar el carrito **en la web de Carrefour** primero.
+
+También hay un tope: pasados los ~1900 caracteres de URL, Carrefour la corta sola y
+llegan menos artículos de los que mandaste, sin ningún error a la vista. Antes de abrir
+se mide y, si se pasa, se avisa que lo mandes en dos veces.
+
 ### El porcentaje de coincidencia no se muestra
 
 Lo pidió el usuario: el puntaje **sigue funcionando igual** (agrupa, ordena, alimenta el
@@ -271,8 +325,8 @@ Un solo JSON con dos partes independientes, cada una con su marca de tiempo:
 - El chip de vigencia del encabezado se repinta al final de `recuperarSesion()`, porque
   restaurar las ofertas lo deja hablando de la pantalla que no estás mirando.
 
-> El carrito (`seleccion`) **no** se guarda. Es una decisión de la que hay que acordarse
-> si algún día parece un bug: al recuperar una búsqueda, los artículos marcados no vuelven.
+> El carrito (`seleccion`) tampoco va en este archivo, pero **sí se guarda**: vive en el
+> `localStorage` del navegador, aparte. Ver "El carrito no se pierde al refrescar".
 
 ---
 
@@ -362,7 +416,7 @@ Todo lo que ya vivía en el navegador: filtros, orden, paginado, el selector de 
 Cuenta Digital, el cálculo de promos de varias unidades, el precio por kilo/litro, "Usar
 éste", ampliar imágenes y **el carrito** — el carrito es una navegación a
 `carrefour.com.ar/checkout/cart/add`, no pasa por Python, así que desde el celular anda
-igual.
+igual, y también se acuerda de lo que marcaste si refrescás.
 
 ### El botón "Abrir un ultima-busqueda.json…"
 
@@ -401,8 +455,8 @@ VTEX, que no deja pasar de los ~2500 primeros productos de una consulta, `TOPE_V
 
 Se devuelve de a tramos, y no la categoría entera de una, por dos motivos: la barra de
 progreso puede moverse de verdad y las ofertas van apareciendo mientras baja. El navegador
-encadena tramos hasta el `fin`. Dentro de cada tramo, las 6 páginas se piden **en
-paralelo** con un `ThreadPoolExecutor` (`EN_PARALELO`) — eso es lo que evita que tarde
+encadena tramos hasta el `fin`. Dentro de cada tramo, las 10 páginas se piden **en
+paralelo** con un `ThreadPoolExecutor` (`EN_PARALELO`, era 6) — eso es lo que evita que tarde
 minutos. Como cada página va al `CACHE`, repetir la misma categoría después es instantáneo.
 
 ### La barra de progreso
@@ -563,6 +617,74 @@ Hay una copia en cada pantalla, pero la verdad es una sola variable (`incluirTar
 `setTarjeta(v)` actualiza los dos checkboxes, la clase `.on` de los dos labels, y rehace
 lo que dependa de los precios efectivos en ambas vistas. (De paso: hasta acá la clase
 `.on` del switch no la ponía nadie, así que el switch nunca se veía prendido.)
+
+---
+
+## Velocidad: por qué antes tardaba tanto
+
+La herramienta se sentía lentísima y no era culpa del puntaje ni del navegador: era
+**cómo se le hablaba a Carrefour**. Cuatro arreglos, todos en `verificador.py`.
+Medido sobre `articulos.txt` (17 artículos, caché vacía, alternando las dos versiones):
+**43,7 s → 16,0 s, o sea 2,7×**, con exactamente los mismos resultados (17 de 17).
+
+### 1. El pedido colgado — éste era el peor
+
+Con un cronómetro por pedido aparece lo importante: **la mitad de las consultas
+vuelven en 0,3 segundos**, y cada tanto una se queda trabada 20, 30 o 40 segundos.
+Como hay que esperarlas a todas, **esa sola marcaba lo que tardaba la búsqueda entera**.
+
+Ahora se corta a los `ESPERA_CORTA = 7` segundos y se vuelve a preguntar (`INTENTOS = 3`,
+y el último va con el `TIMEOUT` completo por si de verdad es lento). Reintentar cuesta
+0,3 segundos; esperar costaba medio minuto.
+
+> **No subir `ESPERA_CORTA` "por las dudas".** Siete segundos son más de veinte veces
+> la mediana. Lo que pasa a los 7 segundos no está tardando, está colgado.
+
+### 2. Las conexiones se reciclan (`POZO`)
+
+Cada consulta abría una conexión nueva. Contra `https` eso son varios viajes de ida y
+vuelta (TCP + TLS) **antes de pedir nada**: entre 0,3 y 3 segundos por pedido, y una
+búsqueda de 17 artículos hace fácil 20 pedidos.
+
+`pedir_json()` dejó `urllib` y usa `http.client` con un pozo de conexiones (`POZO`,
+hasta `POZO_MAX = 16`) que se reusan. El saludo se paga una vez: el primer pedido
+tarda ~3 s y los siguientes ~0,4 s.
+
+**La trampa de las conexiones guardadas:** del otro lado también las cierran, y una
+conexión muerta no avisa — el pedido sale, la respuesta no llega nunca y se espera el
+timeout entero. Se probó y costaba 23 segundos. Tres defensas, las tres necesarias:
+
+| Defensa | Qué hace |
+|---|---|
+| `POZO_VIDA = 8.0` | Una conexión guardada hace más de 8 segundos se tira sin usarla. |
+| `_sana(con)` | `select()` sobre el socket: si hay algo para leer y nosotros no pedimos nada, eso que hay es el cierre del otro lado. |
+| `TIMEOUT_RECICLADA` | Con una conexión reciclada se espera menos, y si falla se reintenta con una nueva **sin contarlo como error**. |
+
+Por eso, en `pedir_json()`, que falle una conexión **del pozo** es normal y se reintenta;
+que falle una conexión **nueva** es un problema de verdad (Carrefour caído, sin internet)
+y se avisa en el acto, sin insistir: insistir sólo duplicaba la espera.
+
+### 3. El JSON viaja comprimido
+
+Se pedía sin comprimir. Una página del catálogo son ~450 KB de texto; con
+`Accept-Encoding: gzip` viaja alrededor de diez veces menos. `_descomprimir()` maneja
+`gzip` y `deflate`.
+
+### 4. El respaldo del catálogo, en paralelo
+
+`buscar_articulo()` probaba las palabras clave **de a una**, esperando cada respuesta
+para decidir si hacía falta la siguiente: hasta tres esperas seguidas por artículo.
+Ahora las tres salen juntas con un `ThreadPoolExecutor` y en el peor caso se tarda lo
+que tarda una sola. Se pierde el corte anticipado ("ya encontré, no pidas más"), pero
+eso ahorraba **pedidos**, no **tiempo**.
+
+Además, `con_cache()` ahora **deduplica lo que ya está en curso** (`EN_VUELO`): con los
+artículos consultándose en paralelo, dos líneas que comparten palabra clave le pegaban
+dos veces a la misma URL, porque el `CACHE` recién se llena cuando la primera vuelve.
+
+> El explorador de ofertas se beneficia de lo mismo, pero ahí **el techo lo pone
+> Carrefour**: cada página de categoría tarda entre 2 y 4 segundos aunque se pidan en
+> paralelo. Subir `EN_PARALELO` más allá de 10 ya no mejora nada.
 
 ---
 
@@ -811,6 +933,14 @@ items: [ { images:[{imageUrl}],
            } } ] } ]
 ```
 
+### `unitMultiplier`: cuánto suma UNA unidad
+
+`items[].unitMultiplier` dice cuánto entra al carrito por cada unidad que pedís, y
+`items[].measurementUnit` en qué se mide. Casi siempre es `1` / `"un"`, pero todo lo que
+Carrefour vende por peso viene con múltiplos tipo `0.2` o `0.5` en `kg`. `parsear()` lo
+manda como `multiplo` y `unidadMedida`; la pantalla lo avisa abajo del botón del carrito.
+Ver "Las cantidades: tres cosas que las hacían no coincidir".
+
 ### Stock: qué cuenta como "se puede comprar"
 
 `_vendible(commertialOffer)` es **el único lugar** donde se decide, y exige las tres:
@@ -853,6 +983,12 @@ Detalles que muerden:
 - La ventana negra tiene que quedar abierta mientras se usa la herramienta.
 - En modo lectura los precios son los del momento en que se hizo la búsqueda en la
   computadora: el celular no consulta nada, sólo lee el archivo que subiste.
+- **El envío al carrito SUMA a lo que ya haya en el carrito de Carrefour**, no lo
+  reemplaza: si mandás dos veces, las cantidades quedan duplicadas. La app avisa y pide
+  confirmación, pero para reenviar limpio hay que vaciar el carrito en la web.
+- Lo que Carrefour vende por peso suma menos de una unidad por vez (`unitMultiplier`):
+  pedís 1 de "jamón x kg" y entran 0,2 kg. La tarjeta lo aclara, pero el número que ves
+  en el carrito de Carrefour **no** va a ser el que pusiste acá.
 - El envío al carrito usa la sesión del navegador. La **primera** vez sigue siendo lenta:
   Carrefour tiene que crear la sesión y el orderForm, y puede pedirte sucursal o método
   de entrega. Eso pasa una sola vez, no una por artículo.

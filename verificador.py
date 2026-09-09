@@ -13,17 +13,23 @@ Solo usa la biblioteca estandar de Python. No instala nada.
 """
 
 import datetime
+import gzip
+import http.client
 import json
 import os
 import re
+import select
+import socket
 import ssl
 import sys
 import threading
+import time
 import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
 import webbrowser
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -63,25 +69,186 @@ except Exception:
 
 CACHE = {}
 CACHE_LOCK = threading.Lock()
+# Consultas que ALGUIEN ya esta haciendo en este momento. Sin esto, cinco
+# articulos que comparten palabra clave le pegaban cinco veces a la misma URL
+# al mismo tiempo (el CACHE recien se llena cuando la primera vuelve).
+EN_VUELO = {}
 
 
 # ----------------------------------------------------------------------
 # Consulta a Carrefour
+#
+# VELOCIDAD. Esto era lo mas lento de toda la herramienta y por dos motivos,
+# los dos arreglados aca:
+#
+#  1) Cada consulta abria una conexion nueva. Contra https eso son tres viajes
+#     de ida y vuelta (TCP + TLS) ANTES de pedir nada: como Carrefour esta
+#     lejos, se iban entre 0,3 y 0,6 segundos por pedido, y una busqueda de 30
+#     articulos hace facil 60 pedidos. Ahora las conexiones se reciclan en un
+#     "pozo" (POZO) y el saludo se paga una sola vez.
+#
+#  2) Se pedia el JSON sin comprimir. Una pagina del catalogo son varios MB de
+#     texto; con gzip viaja mas o menos diez veces menos. Se pide comprimido y
+#     se descomprime aca.
 # ----------------------------------------------------------------------
-def pedir_json(url):
-    cab = {
-        "User-Agent": UA,
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "es-AR,es;q=0.9",
-    }
-    req = urllib.request.Request(url, headers=cab)
+TIMEOUT = 20             # techo absoluto de espera por un pedido
+# EL PEDIDO COLGADO. Medido sobre la lista entera: la MITAD de las consultas a
+# Carrefour vuelven en 0,3 segundos... y cada tanto una se queda trabada 20, 30
+# o 40. Como se espera a todas, esa sola marcaba lo que tardaba la busqueda
+# completa. Por eso ahora se corta a los 7 segundos y se vuelve a preguntar:
+# reintentar cuesta 0,3 segundos y esperar costaba medio minuto.
+ESPERA_CORTA = 7
+INTENTOS = 3             # el ultimo va con el TIMEOUT entero, por las dudas
+POZO_MAX = 16            # conexiones guardadas para reusar
+# Cuanto vale una conexion guardada. Del otro lado tambien la cierran cuando
+# lleva un rato sin usarse, y una conexion muerta no avisa: el pedido sale, la
+# respuesta no llega nunca y se espera el TIMEOUT entero. Pasarla por la basura
+# a los 8 segundos cuesta un saludo de TLS; no hacerlo costaba 20 segundos.
+POZO_VIDA = 8.0
+# Con una conexion reciclada se espera menos por la respuesta: si esta muerta,
+# se descarta rapido y se reintenta con una nueva en vez de quedarse colgado.
+TIMEOUT_RECICLADA = 10
+
+HOST = urllib.parse.urlparse(BASE).netloc
+
+CABECERAS = {
+    "User-Agent": UA,
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "es-AR,es;q=0.9",
+    "Accept-Encoding": "gzip, deflate",
+    "Connection": "keep-alive",
+}
+
+POZO = []
+POZO_LOCK = threading.Lock()
+
+
+def _cerrar(con):
     try:
-        with urllib.request.urlopen(req, timeout=25, context=CTX) as r:
-            return json.loads(r.read().decode("utf-8", "replace"))
-    except ssl.SSLError:
-        ctx2 = ssl._create_unverified_context()
-        with urllib.request.urlopen(req, timeout=25, context=ctx2) as r:
-            return json.loads(r.read().decode("utf-8", "replace"))
+        con.close()
+    except Exception:
+        pass
+
+
+def _sana(con):
+    """True si la conexion guardada parece seguir viva.
+
+    Truco de siempre: si el socket tiene algo para leer y nosotros no pedimos
+    nada, eso que hay para leer es el cierre del otro lado. Cuesta nada y evita
+    mandar un pedido a una conexion muerta."""
+    s = getattr(con, "sock", None)
+    if s is None:
+        return False
+    try:
+        leible, _, rotos = select.select([s], [], [s], 0)
+        return not leible and not rotos
+    except Exception:
+        return False
+
+
+def _tomar_conexion(espera):
+    """Una conexion lista para usar. Devuelve (conexion, venia_del_pozo)."""
+    ahora = time.monotonic()
+    while True:
+        with POZO_LOCK:
+            if not POZO:
+                break
+            con, guardada = POZO.pop()
+        if ahora - guardada < POZO_VIDA and _sana(con):
+            _espera(con, min(espera, TIMEOUT_RECICLADA))
+            return con, True
+        _cerrar(con)          # vieja o ya cerrada del otro lado: no sirve
+    return http.client.HTTPSConnection(HOST, timeout=espera, context=CTX), False
+
+
+def _guardar_conexion(con):
+    with POZO_LOCK:
+        if len(POZO) < POZO_MAX:
+            POZO.append((con, time.monotonic()))
+            return
+    _cerrar(con)
+
+
+def _vaciar_pozo():
+    with POZO_LOCK:
+        pendientes, POZO[:] = list(POZO), []
+    for con, _ in pendientes:
+        _cerrar(con)
+
+
+def _espera(con, segundos):
+    try:
+        con.sock.settimeout(segundos)
+    except Exception:
+        pass
+
+
+def _descomprimir(crudo, codificacion):
+    c = (codificacion or "").lower()
+    if "gzip" in c:
+        return gzip.decompress(crudo)
+    if "deflate" in c:
+        try:
+            return zlib.decompress(crudo)
+        except zlib.error:
+            return zlib.decompress(crudo, -zlib.MAX_WBITS)
+    return crudo
+
+
+def pedir_json(url):
+    """GET a Carrefour reusando conexion y pidiendo el JSON comprimido.
+
+    Una conexion guardada puede haber sido cerrada del otro lado mientras
+    esperaba: si falla y venia del pozo NO cuenta como error, se reintenta con
+    una nueva. Es lo normal y no hay que avisar nada."""
+    global CTX
+    ruta = url[len(BASE):] if url.startswith(BASE) else url
+    ultimo = None
+
+    for intento in range(INTENTOS):
+        ultima = (intento == INTENTOS - 1)
+        espera = TIMEOUT if ultima else ESPERA_CORTA
+        con, del_pozo = _tomar_conexion(espera)
+        try:
+            con.request("GET", ruta, headers=CABECERAS)
+            r = con.getresponse()
+            _espera(con, TIMEOUT)      # el cuerpo puede ser grande: sin apuro
+            crudo = r.read()
+            if r.status >= 400:
+                _cerrar(con)
+                raise urllib.error.HTTPError(url, r.status, r.reason or "", None, None)
+            if r.will_close:
+                _cerrar(con)
+            else:
+                _guardar_conexion(con)
+            return json.loads(_descomprimir(crudo, r.getheader("Content-Encoding"))
+                              .decode("utf-8", "replace"))
+        except urllib.error.HTTPError:
+            raise
+        except ssl.SSLError as e:
+            # Certificados del sistema desactualizados: se degrada a una
+            # conexion sin verificar en vez de romper toda la herramienta.
+            _cerrar(con)
+            ultimo = e
+            CTX = ssl._create_unverified_context()
+            _vaciar_pozo()
+        except (socket.timeout, TimeoutError) as e:
+            # El pedido colgado. Volver a preguntar casi siempre sale al toque.
+            _cerrar(con)
+            ultimo = e
+            if ultima:
+                raise
+        except Exception as e:
+            _cerrar(con)
+            ultimo = e
+            # Una conexion NUEVA que falla asi es un problema de verdad
+            # (Carrefour caido, sin internet): se avisa y listo. Se reintenta
+            # solo cuando la conexion venia guardada, que es cuando la culpa
+            # puede ser nuestra por haberla reciclado.
+            if not del_pozo:
+                raise
+
+    raise ultimo or IOError("No se pudo consultar %s" % url)
 
 
 def buscar_inteligente(consulta):
@@ -104,12 +271,37 @@ def buscar_legacy(token):
 
 
 def con_cache(clave, fn):
+    """Igual que antes, pero si esa misma consulta YA esta en curso se espera su
+    resultado en vez de repetirla. Con los articulos consultandose en paralelo
+    pasaba seguido: dos lineas que comparten palabra clave pedian lo mismo dos
+    veces porque el CACHE recien se llena cuando la primera vuelve."""
     with CACHE_LOCK:
         if clave in CACHE:
             return CACHE[clave]
-    valor = fn()
+        aviso = EN_VUELO.get(clave)
+        propio = aviso is None
+        if propio:
+            aviso = EN_VUELO[clave] = threading.Event()
+
+    if not propio:
+        aviso.wait(TIMEOUT + 5)
+        with CACHE_LOCK:
+            if clave in CACHE:
+                return CACHE[clave]
+        return fn()          # al otro le fue mal: se intenta por las propias
+
+    try:
+        valor = fn()
+    except Exception:
+        with CACHE_LOCK:
+            EN_VUELO.pop(clave, None)
+        aviso.set()
+        raise
+
     with CACHE_LOCK:
         CACHE[clave] = valor
+        EN_VUELO.pop(clave, None)
+    aviso.set()
     return valor
 
 
@@ -429,6 +621,16 @@ def parsear(p):
     sku = str(it.get("itemId") or it.get("itemid") or "")
     vendedor = str(sellers.get("sellerId") or "1")
 
+    # Cuanto suma UNA unidad en el carrito de Carrefour. Casi siempre 1, pero
+    # lo que se vende por peso (fiambres, frutas, carne) viene con multiplos
+    # tipo 0,5 o 0,1: pedis "1" y en el carrito aparece "0,5 kg". De ahi salian
+    # varias de las diferencias entre lo que marcabas aca y lo que quedaba alla.
+    try:
+        multiplo = float(it.get("unitMultiplier") or 1) or 1.0
+    except (TypeError, ValueError):
+        multiplo = 1.0
+    unidad = str(it.get("measurementUnit") or "un")
+
     return {
         "id": str(p.get("productId") or p.get("linkText") or link),
         "nombre": p.get("productName") or "(sin nombre)",
@@ -437,6 +639,9 @@ def parsear(p):
         "sku": sku,
         "vendedor": vendedor,
         "img": img or "",
+        # Lo que suma una unidad en el carrito de Carrefour (ver arriba).
+        "multiplo": multiplo,
+        "unidadMedida": unidad,
         "precio": precio,
         "lista": lista,
         "desc": desc,
@@ -509,22 +714,31 @@ def buscar_articulo(linea):
         return max([puntaje(desc, p) for p in acumulado.values()], default=0.0)
 
     # 2) Si no alcanzo, respaldo con el catalogo literal palabra por palabra.
+    #
+    # VELOCIDAD: antes las palabras se probaban de a una, esperando cada
+    # respuesta para decidir si hacia falta la siguiente. Eran hasta tres
+    # esperas seguidas por articulo. Ahora las tres salen JUNTAS: en el peor
+    # caso se tarda lo que tarda una sola. (Se pierde el corte anticipado
+    # "ya encontre, no pidas mas", pero eso ahorraba pedidos, no tiempo.)
     if mejor_puntaje() < 0.85:
-        for k in ([norm(clave)] if clave else claves_busqueda(desc)):
-            if not k:
-                continue
-            try:
-                crudos = con_cache("LG:" + k, lambda k=k: buscar_legacy(k))
-                hubo_red = True
-                if crudos and ("catalogo (%s)" % k) not in vias:
-                    vias.append("catalogo (%s)" % k)
-                for p in crudos:
-                    d = parsear(p)
-                    acumulado.setdefault(d["id"], d)
-            except Exception as e:
-                error = error or ("Catalogo: %s" % e)
-            if mejor_puntaje() >= 0.9:
-                break
+        claves = [k for k in ([norm(clave)] if clave else claves_busqueda(desc)) if k]
+        if claves:
+            with ThreadPoolExecutor(max_workers=len(claves)) as pool:
+                pedidos = [(k, pool.submit(con_cache, "LG:" + k,
+                                           lambda k=k: buscar_legacy(k)))
+                           for k in claves]
+                for k, fut in pedidos:
+                    try:
+                        crudos = fut.result()
+                    except Exception as e:
+                        error = error or ("Catalogo: %s" % e)
+                        continue
+                    hubo_red = True
+                    if crudos and ("catalogo (%s)" % k) not in vias:
+                        vias.append("catalogo (%s)" % k)
+                    for p in crudos:
+                        d = parsear(p)
+                        acumulado.setdefault(d["id"], d)
 
     if not hubo_red:
         return {"linea": linea, "desc": desc, "via": "-", "principal": None,
@@ -584,7 +798,10 @@ POR_PAGINA = 50          # el maximo que devuelve VTEX de una
 # pasado ese punto devuelve error. Es el unico techo real que hay.
 TOPE_VENTANA = 2500
 PAGINAS_MAX = TOPE_VENTANA // POR_PAGINA
-EN_PARALELO = 6          # paginas que se piden a la vez, para no tardar una eternidad
+EN_PARALELO = 10         # paginas que se piden a la vez, para no tardar una eternidad
+# (subio de 6 a 10 al reciclarse las conexiones: cada pagina de mas ya no paga
+#  el saludo de TLS. Medido, un tramo de 10 tarda casi lo mismo que uno de 6.
+#  Mas arriba de 10 ya no rinde: el que frena es Carrefour, no nosotros.)
 
 
 def arbol_categorias():
