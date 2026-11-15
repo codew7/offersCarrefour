@@ -464,7 +464,44 @@
 
   /* Al cambiar de página se salta al principio de la lista: sin esto, la
      barra pegajosa de filtros tapa las primeras tarjetas. */
-  #ofSalida,#salida{scroll-margin-top:150px}
+  #ofSalida,#salida,#hbSalida{scroll-margin-top:150px}
+
+  /* ---- Lo que compro ---- */
+  .hb-ayuda{padding:18px 20px;margin-bottom:14px}
+  .hb-ayuda h3{margin:0 0 8px;font-size:16px}
+  .hb-ayuda ol{margin:0 0 10px;padding-left:20px;line-height:1.6;font-size:13.5px}
+  .hb-nota{font-size:12.5px;color:var(--tenue);margin:0 0 12px;line-height:1.5}
+  .acciones-panel{display:flex;gap:8px;flex-wrap:wrap}
+  /* Se ARRASTRA a la barra de favoritos; tocarlo acá no hace nada. */
+  .hb-fav{display:inline-block;margin-left:6px;background:var(--azul);color:#fff;font-weight:700;
+          padding:4px 12px;border-radius:999px;text-decoration:none;cursor:grab;font-size:13px}
+  /* Lo que dice tu historial: cuántas veces, cuándo y a cuánto lo pagaste. */
+  .hb-hist{font-size:12px;color:var(--tenue);line-height:1.45}
+  .hb-hist b{color:var(--texto)}
+  .hb-dif{display:inline-block;font-weight:700;padding:0 6px;border-radius:999px;margin-left:2px}
+  .hb-dif.baja{background:#e6f4ee;color:var(--verde)}
+  .hb-dif.sube{background:#fdecec;color:var(--rojo)}
+  .hb-of{align-self:flex-start;background:var(--verde);color:#fff;font-size:10px;
+         font-weight:750;letter-spacing:.5px;padding:2px 8px;border-radius:999px}
+  .oc.apagada{opacity:.72}
+  .oc.apagada .thumb{filter:grayscale(1)}
+  .hb-estado{font-size:12.5px;font-weight:650;color:var(--tenue)}
+  /* Esta barra tiene más controles que la del explorador: sin un ancho mínimo
+     el buscador se achicaba hasta quedar tapado por los desplegables. */
+  #hbToolbar .buscador{min-width:220px}
+  .hb-meses{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--tenue)}
+  .hb-meses.oculto{display:none}
+  .hb-meses input{border:0;border-radius:9px;padding:7px 9px;font-size:13px;font-family:inherit;
+                  background:#fff;box-shadow:inset 0 0 0 1px var(--linea);color:var(--texto)}
+  @media (max-width:720px){
+    #hbToolbar .buscador{min-width:0}
+    /* minmax(0,…): que un texto largo de opción no ensanche la columna. */
+    #hbToolbar .of-controles{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+    #hbToolbar select{min-width:0;width:100%}
+    #hbToolbar .hb-meses{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+    #hbToolbar .hb-meses.oculto{display:none}
+    #hbToolbar .hb-meses input{min-width:0;width:100%}
+  }
 
   /* El padding grande deja lugar a la barra flotante del carrito. */
   footer{text-align:center;color:var(--tenue);font-size:12px;padding:8px 20px 90px}
@@ -665,8 +702,113 @@
     <div class="fila-tabs">
       <div class="tabs">
         <button class="tab on" id="tabLista">Mi lista</button>
+        <button class="tab" id="tabHabituales">Lo que compro</button>
         <button class="tab" id="tabOfertas">Explorar ofertas</button>
       </div>
+    </div>
+
+    <!-- ============ Pantalla 3: lo que compro (historial de la cuenta) ============ -->
+    <div id="vistaHabituales" class="oculto">
+
+      <!-- Cómo bajar / actualizar historial-carrefour.json. Se abre sola si falta. -->
+      <section class="panel hb-ayuda oculto" id="hbAyuda">
+        <h3>Cómo traer tu historial de compras</h3>
+        <p class="hb-nota"><b>Lo más fácil, con tu Brave de siempre:</b></p>
+        <ol>
+          <li>Una sola vez: <b>arrastrá este botón a tu barra de favoritos</b>
+              <a class="hb-fav" id="hbFav" href="#">📥 Historial Carrefour</a></li>
+          <li>Abrí <a href="https://www.carrefour.com.ar" target="_blank" rel="noopener">carrefour.com.ar</a>
+              (con tu sesión iniciada) y tocá ese favorito. Baja el archivo a Descargas.</li>
+          <li>Volvé acá y tocá <b>Leer historial</b>: lo toma de Descargas y suma los pedidos nuevos.</li>
+        </ol>
+        <p class="hb-nota">O con doble clic en <code>actualizar-historial.bat</code>: abre Carrefour en
+          Brave, espera a que toques el favorito y hace el resto solo.</p>
+        <p class="hb-nota">Sin favorito, a mano desde la consola:</p>
+        <ol>
+          <li>Abrí <a href="https://www.carrefour.com.ar" target="_blank" rel="noopener">carrefour.com.ar</a>
+              en tu navegador e <b>iniciá sesión</b>.</li>
+          <li>Apretá <b>F12</b> y elegí la pestaña <b>Console</b>. Si pide permiso, escribí
+              <code>allow pasting</code> y Enter.</li>
+          <li>Tocá <b>Copiar código</b> acá abajo, pegalo en la consola y apretá Enter.</li>
+          <li>Se baja <code>historial-carrefour.json</code>: movelo a la carpeta del programa
+              (reemplazando el anterior) y tocá <b>Leer historial</b>.</li>
+        </ol>
+        <p class="hb-nota">El código sólo lee <b>tus pedidos de los últimos 12 meses</b> y guarda los
+          productos (nombre, código, cantidad, precio y fecha). Tu contraseña, tu dirección y tus
+          datos de pago no salen del navegador ni quedan en el archivo.</p>
+        <div class="acciones-panel">
+          <button class="btn-p" id="hbCopiar">Copiar código</button>
+          <button class="btn-s" id="hbLeer">Leer historial</button>
+        </div>
+      </section>
+
+      <div class="guardado oculto" id="hbAvisoGuardado">
+        <span class="g-txt"></span>
+        <button class="btn-mini g-nuevo">Consultar de nuevo</button>
+        <button class="btn-mini g-borrar">Descartar</button>
+      </div>
+
+      <div class="toolbar oculto" id="hbToolbar">
+        <div class="controles of-controles">
+          <span class="buscador">
+            <input type="search" id="hbTexto" placeholder="Filtrar por nombre o marca…">
+          </span>
+          <!-- Período del análisis: todo lo de abajo (veces, última compra, precio
+               pagado) se recalcula sólo con los pedidos de estos meses. -->
+          <select id="hbPeriodo" title="Qué meses del historial tener en cuenta">
+            <option value="1">Último mes</option>
+            <option value="3">Últimos 3 meses</option>
+            <option value="6">Últimos 6 meses</option>
+            <option value="12" selected>Últimos 12 meses</option>
+            <option value="todo">Todo el historial</option>
+            <option value="meses">Elegir meses…</option>
+          </select>
+          <span class="hb-meses oculto" id="hbMeses">
+            <input type="month" id="hbDesde" title="Desde (mes incluido)">
+            <span>a</span>
+            <input type="month" id="hbHasta" title="Hasta (mes incluido)">
+          </span>
+          <select id="hbVeces" title="Cuántas veces lo compraste en el período">
+            <option value="1">Todo lo comprado</option>
+            <option value="2" selected>Comprado 2 veces o más</option>
+            <option value="3">3 veces o más</option>
+            <option value="5">5 veces o más</option>
+            <option value="10">10 veces o más</option>
+          </select>
+          <select id="hbEstado" title="Qué mostrar">
+            <option value="todos">Cualquier estado</option>
+            <option value="oferta">Sólo en oferta</option>
+            <option value="baja">Más barato que la última vez</option>
+            <option value="sinstock">Sin stock online</option>
+            <option value="nohay">Ya no está en la tienda</option>
+          </select>
+          <select id="hbOrden" title="Ordenar">
+            <option value="oferta" selected>En oferta primero</option>
+            <option value="veces">Más comprados</option>
+            <option value="desc">Mayor descuento</option>
+            <option value="baja">Mayor baja de precio</option>
+            <option value="nombre">Nombre (A-Z)</option>
+          </select>
+          <label class="switch" id="hbSwTarjeta"
+                 title="Promos que sólo aplican pagando con Tarjeta Carrefour o Cuenta Digital Carrefour">
+            <input type="checkbox" id="hbChkTarjeta">
+            <span class="pista"></span>
+            <span class="sw-larga">Contar Tarjeta / Cuenta Digital</span>
+            <span class="sw-corta">Tarjeta</span>
+          </label>
+          <button class="btn-mini" id="hbConsultar" title="Volver a consultar los precios de hoy">Actualizar precios</button>
+          <button class="btn-mini" id="hbBtnAyuda" title="Cómo bajar el historial más nuevo de tu cuenta">Actualizar historial</button>
+        </div>
+      </div>
+
+      <div class="carga oculto" id="hbCargando">
+        <div class="carga-cab"><span class="carga-txt" id="hbCargaTxt">Consultando…</span></div>
+        <div class="carga-bar"><i id="hbCargaBar" style="width:0%"></i></div>
+      </div>
+
+      <div class="of-resumen oculto" id="hbResumen"></div>
+      <div id="hbSalida" class="of-grid"></div>
+      <div class="of-pag oculto" id="hbMas"><button id="hbBtnMas">Ver más</button></div>
     </div>
 
     <!-- ============ Pantalla 2: explorador de ofertas ============ -->
@@ -892,6 +1034,35 @@
 <footer>
   © Warezney Compra-System 2026
 </footer>
+
+<!-- Lo que copia el botón "Copiar código" de "Lo que compro". Se pega en la
+     consola de carrefour.com.ar CON LA SESIÓN INICIADA: lee tus pedidos de los
+     últimos 12 meses (mismo sitio, así que no hay CORS) y baja un archivo con
+     los productos. No es parte de esta página: type="text/plain" no se ejecuta. -->
+<script type="text/plain" id="hbCodigo">(async()=>{
+ if(!/(^|\.)carrefour\.com\.ar$/.test(location.hostname)){alert('Abrí www.carrefour.com.ar (con tu sesión iniciada) y tocá de nuevo este favorito.');return;}
+ const hace=Date.now()-365*864e5, lista=[];
+ for(let p=1;p<60;p++){
+  const r=await fetch(`/api/oms/user/orders?page=${p}&per_page=50`,{credentials:'include'});
+  if(!r.ok){alert('No pude leer los pedidos ('+r.status+'). ¿Iniciaste sesión?');return;}
+  const d=await r.json(), l=d.list||[];
+  if(!l.length)break;
+  lista.push(...l);
+  if(l.some(o=>new Date(o.creationDate)<hace))break;
+  if(d.paging&&p>=d.paging.pages)break;
+ }
+ const ult=lista.filter(o=>new Date(o.creationDate)>=hace), pedidos=[];
+ for(const o of ult){
+  let x=o;
+  try{const r=await fetch('/api/oms/user/orders/'+o.orderId,{credentials:'include'});if(r.ok)x=await r.json();}catch(e){}
+  pedidos.push({pedido:x.orderId,fecha:x.creationDate,estado:x.status||x.statusDescription,
+   items:(x.items||[]).map(i=>({sku:i.id,productId:i.productId,refId:i.refId,nombre:i.name,
+    cantidad:i.quantity,precio:(i.sellingPrice??i.price)/100,url:i.detailUrl,img:i.imageUrl}))});
+ }
+ const b=new Blob([JSON.stringify({exportado:new Date().toISOString(),pedidos},null,1)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='historial-carrefour.json';a.click();
+ alert(pedidos.length+' pedidos exportados');
+})();</script>
 
 <script>
 (function(){
@@ -1717,15 +1888,25 @@
   var ofUsado = false;       // hasta que no busques, la pantalla queda en blanco
 
   function vista(cual){
-    var esOf = cual === "ofertas";
+    var esOf = cual === "ofertas", esHb = cual === "habituales";
     $("vistaOfertas").classList.toggle("oculto", !esOf);
-    $("vistaLista").classList.toggle("oculto", esOf);
+    $("vistaHabituales").classList.toggle("oculto", !esHb);
+    $("vistaLista").classList.toggle("oculto", esOf || esHb);
     $("tabOfertas").classList.toggle("on", esOf);
-    $("tabLista").classList.toggle("on", !esOf);
+    $("tabHabituales").classList.toggle("on", esHb);
+    $("tabLista").classList.toggle("on", !esOf && !esHb);
     // La vigencia del header habla de lo que estás mirando ahora.
-    if(esOf) pintarVigencia(ofUsado ? ofertasFiltradas() : []);
-    else     pintarVigencia(resultados.map(function(r){ return r.principal; }));
+    if(esOf)      pintarVigencia(ofUsado ? ofertasFiltradas() : []);
+    else if(esHb) pintarVigencia([]);      // pintarHabituales() la repinta
+    else          pintarVigencia(resultados.map(function(r){ return r.principal; }));
     if(esOf && !soloLectura && !ofCategorias.length) cargarCategorias();
+    if(esHb){
+      pintarHabituales();
+      // Se relee siempre: si bajaste un historial nuevo, entra solo.
+      if(!soloLectura) cargarHistorial();
+      else if(!hb.hist) $("hbSalida").innerHTML = '<div class="sin-nada">Este archivo no trae '
+        + 'tus compras habituales. Se guardan al consultarlas desde la computadora.</div>';
+    }
   }
 
   // ---- Selección múltiple de categorías ----
@@ -2383,7 +2564,9 @@
     return mejores;
   }
 
-  function tarjetaOferta(p, mejores){
+  // extra: HTML opcional que va debajo del nombre ("Lo que compro" lo usa para
+  // decir cuántas veces lo compraste y a cuánto).
+  function tarjetaOferta(p, mejores, extra){
     var soloTarj = soloPorTarjeta(p);
     var sub = subcategoria(p.cat);
     // El que más rinde de su subcategoría no lleva cartel: se pinta de amarillo
@@ -2402,6 +2585,7 @@
           + '<div class="oc-nombre"><a href="' + esc(p.link) + '" target="_blank" rel="noopener">'
           + esc(p.nombre) + '</a></div>'
           + '</div></div>'
+          + (extra || '')
           + (soloTarj ? '<span class="oc-tarj">SÓLO CON TARJETA</span>' : '')
           + bloquePrecios(p);
 
@@ -2419,6 +2603,333 @@
        + '</div>';
 
     return h + '</div>';
+  }
+
+  // ==================================================================
+  // Lo que compro — los productos de tu historial de pedidos.
+  //
+  // historial-carrefour.json trae cada producto con su productId, así que acá
+  // NO se busca por nombre: se consulta ese producto exacto, de a 50 por pedido.
+  // Comparte el carrito, el selector de Tarjeta, las promos de varias unidades
+  // y el precio por medida con las otras dos pantallas.
+  // ==================================================================
+  var hb = {
+    hist: null,          // lo que manda /api/historial: {pedidos, desde, hasta, items}
+    estado: {},          // productId -> producto de hoy, o false si ya no está en la tienda
+    consultado: "",      // cuándo se consultaron los precios (ISO)
+    cargando: false,
+    limite: 100          // tarjetas dibujadas; "Ver más" suma otras 100
+  };
+  var HB_TANDA = 50, HB_PARALELO = 4;
+
+  function fechaCorta(iso){
+    var t = String(iso || "").split("-");
+    return t.length === 3 ? (+t[2]) + "/" + (+t[1]) + (t[0] !== String(new Date().getFullYear()) ? "/" + t[0].slice(2) : "") : "";
+  }
+
+  // Hoy vs. lo que pagaste la última vez, en %. Lo que se vende por peso queda
+  // afuera: ahí el precio del pedido y el del catálogo no se miden igual.
+  function hbDiferencia(h, p){
+    if(!p || !p.precio || !h.ultimoPrecio || (+p.multiplo || 1) !== 1) return null;
+    var pr = promoUnitaria(p);
+    var hoy = pr ? pr.unitario : p.precio;
+    return Math.round((hoy / h.ultimoPrecio - 1) * 100);
+  }
+
+  // ---- Período del análisis ----
+  // Python manda cada compra con su fecha (h.compras = [[fecha, pedido, cant,
+  // precio], …]) y acá se recalcula todo para los meses elegidos, sin volver a
+  // consultar nada. Es independiente de cuánto historial haya en el archivo.
+  var CLAVE_PERIODO = "carrefour.periodo";
+
+  function isoDia(d){
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
+
+  // {desde, hasta} en AAAA-MM-DD ("" = sin límite), o null = todo el historial.
+  function hbRango(){
+    var v = $("hbPeriodo").value;
+    if(v === "todo") return null;
+    if(v === "meses"){
+      var d = $("hbDesde").value, h = $("hbHasta").value;      // "AAAA-MM"
+      if(d && h && d > h){ var t = d; d = h; h = t; }           // al revés: se da vuelta
+      var fin = "";
+      if(h){
+        var p = h.split("-");
+        fin = isoDia(new Date(+p[0], +p[1], 0));                // último día de ese mes
+      }
+      return { desde: d ? d + "-01" : "", hasta: fin };
+    }
+    var f = new Date();
+    f.setMonth(f.getMonth() - (+v || 12));
+    return { desde: isoDia(f), hasta: "" };
+  }
+
+  function hbTextoRango(r){
+    if(!r) return "todo el historial";
+    var d = r.desde || (hb.hist && hb.hist.desde) || "";
+    return "del " + fechaCorta(d) + (r.hasta ? " al " + fechaCorta(r.hasta) : " a hoy");
+  }
+
+  // El producto visto sólo dentro del período: null si no lo compraste en esos meses.
+  // pedidos (un objeto) junta los números de pedido, para contarlos.
+  function hbDelPeriodo(h, r, pedidos){
+    if(!h.compras) return h;      // guardado de una versión anterior: sin detalle por fecha
+    var c = h.compras.filter(function(x){
+      return !r || ((!r.desde || x[0] >= r.desde) && (!r.hasta || x[0] <= r.hasta));
+    });
+    if(!c.length) return null;
+    var u = c[c.length - 1], uni = 0;
+    c.forEach(function(x){ uni += +x[2] || 0; if(pedidos) pedidos[x[1]] = true; });
+    var o = {};
+    for(var k in h) o[k] = h[k];
+    o.veces = c.length;
+    o.unidades = uni;
+    o.primera = c[0][0];
+    o.ultima = u[0];
+    o.ultimoPrecio = u[3];
+    return o;
+  }
+
+  function hbPeriodo(){
+    var r = hbRango(), pedidos = {}, items = [];
+    (hb.hist ? hb.hist.items : []).forEach(function(h){
+      var x = hbDelPeriodo(h, r, pedidos);
+      if(x) items.push(x);
+    });
+    return { rango:r, items:items, pedidos:Object.keys(pedidos).length };
+  }
+
+  function guardarPeriodo(){
+    try{
+      localStorage.setItem(CLAVE_PERIODO, JSON.stringify({
+        v:$("hbPeriodo").value, desde:$("hbDesde").value, hasta:$("hbHasta").value }));
+    }catch(e){ /* sin localStorage: vuelve a "12 meses" al reabrir */ }
+  }
+
+  function leerPeriodo(){
+    try{
+      var g = JSON.parse(localStorage.getItem(CLAVE_PERIODO) || "null");
+      if(!g) return;
+      if($("hbPeriodo").querySelector('option[value="' + g.v + '"]')) $("hbPeriodo").value = g.v;
+      $("hbDesde").value = g.desde || "";
+      $("hbHasta").value = g.hasta || "";
+    }catch(e){}
+    $("hbMeses").classList.toggle("oculto", $("hbPeriodo").value !== "meses");
+  }
+
+  // Los selectores de mes se limitan a lo que hay en el historial y, si están
+  // vacíos, arrancan en "todo el historial" para que tengas desde dónde mover.
+  function prepararMeses(){
+    if(!hb.hist) return;
+    var min = String(hb.hist.desde || "").slice(0, 7), max = isoDia(new Date()).slice(0, 7);
+    [$("hbDesde"), $("hbHasta")].forEach(function(i){ if(min) i.min = min; i.max = max; });
+    if(!$("hbDesde").value && min) $("hbDesde").value = min;
+    if(!$("hbHasta").value) $("hbHasta").value = max;
+  }
+
+  function cambiarPeriodo(){
+    var meses = $("hbPeriodo").value === "meses";
+    $("hbMeses").classList.toggle("oculto", !meses);
+    if(meses) prepararMeses();
+    guardarPeriodo();
+    refiltrarHabituales();
+  }
+
+  function hbFilas(per){
+    if(!hb.hist) return [];
+    var min = +$("hbVeces").value || 1;
+    var est = $("hbEstado").value;
+    var q = normTxt($("hbTexto").value.trim());
+    var filas = per.items.filter(function(h){ return h.veces >= min; }).map(function(h){
+      var p = hb.estado[h.id];
+      return { h:h, p:p || null, nohay:p === false, dif:hbDiferencia(h, p || null) };
+    }).filter(function(f){
+      if(q && normTxt(f.p ? f.p.nombre + " " + f.p.marca : f.h.nombre).indexOf(q) < 0) return false;
+      var vende = f.p && f.p.disponible && f.p.precio;
+      if(est === "oferta")   return vende && esOferta(f.p);
+      if(est === "baja")     return vende && f.dif !== null && f.dif < 0;
+      if(est === "sinstock") return f.p && !vende;
+      if(est === "nohay")    return f.nohay;
+      return true;
+    });
+
+    var orden = $("hbOrden").value;
+    function vende(f){ return f.p && f.p.disponible && f.p.precio ? 1 : 0; }
+    filas.sort(function(a, b){
+      var r = 0;
+      if(orden === "oferta"){
+        r = (vende(b) && esOferta(b.p) ? 1 : 0) - (vende(a) && esOferta(a.p) ? 1 : 0)
+         || vende(b) - vende(a);
+      }else if(orden === "desc"){
+        r = (vende(b) ? descuentoDe(b.p) : -1) - (vende(a) ? descuentoDe(a.p) : -1);
+      }else if(orden === "baja"){
+        r = (a.dif === null ? 999 : a.dif) - (b.dif === null ? 999 : b.dif);
+      }else if(orden === "nombre"){
+        return a.h.nombre.localeCompare(b.h.nombre, "es");
+      }
+      return r || (b.h.veces - a.h.veces) || a.h.nombre.localeCompare(b.h.nombre, "es");
+    });
+    return filas;
+  }
+
+  function hbLineaHist(f){
+    var h = f.h;
+    var t = 'Lo compraste <b>' + h.veces + (h.veces === 1 ? ' vez' : ' veces') + '</b>'
+          + ' · la última el ' + esc(fechaCorta(h.ultima))
+          + (h.ultimoPrecio ? ' a <b>' + plata(h.ultimoPrecio) + '</b>' : '');
+    if(f.dif !== null && f.dif !== 0){
+      t += ' <span class="hb-dif ' + (f.dif < 0 ? 'baja' : 'sube') + '" title="Precio de hoy contra lo que pagaste la última vez">'
+         + 'hoy ' + (f.dif > 0 ? '+' : '−') + Math.abs(f.dif) + '%</span>';
+    }
+    return '<div class="hb-hist">' + t + '</div>';
+  }
+
+  function tarjetaHabitual(f, mejores){
+    var p = f.p;
+    if(p && p.disponible && p.precio){
+      var extra = hbLineaHist(f)
+                + (esOferta(p) && !soloPorTarjeta(p) ? '<span class="hb-of">EN OFERTA</span>' : '');
+      return tarjetaOferta(p, mejores, extra);
+    }
+    // Sin stock, ya no está, o todavía sin consultar: se muestra lo del historial.
+    var h = f.h;
+    var link = p ? p.link : (h.url ? CARREFOUR + h.url : "");
+    var estado = f.nohay ? "Ya no está en la tienda"
+               : p ? "Sin stock online"
+               : (hb.cargando ? "Consultando…" : "Sin consultar");
+    return '<div class="oc apagada" style="--franja:#9aa5b1">'
+         + '<div class="oc-top">'
+         + (h.img ? '<img class="thumb" src="' + esc(h.img) + '" alt="" loading="lazy">' : '')
+         + '<div class="datos"><div class="oc-nombre">'
+         + (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(h.nombre) + '</a>' : esc(h.nombre))
+         + '</div></div></div>'
+         + hbLineaHist(f)
+         + '<div class="oc-pie"><span class="hb-estado">' + estado + '</span></div>'
+         + '</div>';
+  }
+
+  function pintarHabituales(){
+    if(!hb.hist) return;
+    if($("hbPeriodo").value === "meses") prepararMeses();   // sólo completa lo vacío
+    var per = hbPeriodo();
+    var filas = hbFilas(per);
+    var todos = per.items.filter(function(h){ return h.veces >= (+$("hbVeces").value || 1); });
+    var cuenta = { of:0, sin:0, no:0 };
+    todos.forEach(function(h){
+      var p = hb.estado[h.id];
+      if(p === false) cuenta.no++;
+      else if(p && (!p.disponible || !p.precio)) cuenta.sin++;
+      else if(p && esOferta(p)) cuenta.of++;
+    });
+
+    $("hbToolbar").classList.remove("oculto");
+    $("hbResumen").classList.remove("oculto");
+    $("hbResumen").innerHTML =
+        "<b>" + todos.length + "</b> producto" + (todos.length === 1 ? "" : "s")
+      + (hb.consultado ? " · <b>" + cuenta.of + "</b> en oferta hoy"
+          + (cuenta.sin ? " · " + cuenta.sin + " sin stock" : "")
+          + (cuenta.no ? " · " + cuenta.no + " ya no están" : "") : "")
+      + (filas.length !== todos.length ? " · mostrando " + filas.length : "")
+      + " · período: <b>" + esc(hbTextoRango(per.rango)) + "</b>"
+      + (hb.hist.items.some(function(h){ return h.compras; }) ? " (" + per.pedidos + " pedidos)" : "")
+      + "<span title=\"Lo que hay descargado en historial-carrefour.json\"> · historial descargado: "
+      + hb.hist.pedidos + " pedidos, del " + esc(fechaCorta(hb.hist.desde))
+      + " al " + esc(fechaCorta(hb.hist.hasta)) + "</span>";
+
+    var cont = $("hbSalida");
+    if(!filas.length){
+      cont.innerHTML = '<div class="sin-nada">' + (per.items.length
+        ? 'Nada con estos filtros.'
+        : 'No hay compras en ese período. Probá con otros meses.') + '</div>';
+      $("hbMas").classList.add("oculto");
+      return;
+    }
+    var conPrecio = filas.filter(function(f){ return f.p && f.p.disponible && f.p.precio; })
+                         .map(function(f){ return f.p; });
+    var mejores = mejoresPorSubcategoria(conPrecio);
+    cont.innerHTML = filas.slice(0, hb.limite)
+      .map(function(f){ return tarjetaHabitual(f, mejores); }).join("");
+    conectarTarjetas(cont);
+    $("hbMas").classList.toggle("oculto", filas.length <= hb.limite);
+    $("hbBtnMas").textContent = "Ver más (" + (filas.length - hb.limite) + " restantes)";
+    // Sólo si es la pantalla que estás mirando: se repinta también de fondo.
+    if(!$("vistaHabituales").classList.contains("oculto")) pintarVigencia(conPrecio);
+  }
+
+  function refiltrarHabituales(){ hb.limite = 100; pintarHabituales(); }
+
+  function hbCarga(pct, txt, listo){
+    var caja = $("hbCargando");
+    caja.classList.remove("oculto");
+    caja.classList.toggle("listo", !!listo);
+    $("hbCargaBar").style.width = Math.max(0, Math.min(100, pct)) + "%";
+    $("hbCargaTxt").textContent = txt;
+    $("progreso").style.width = Math.round(pct) + "%";
+  }
+
+  // Lee historial-carrefour.json (vía Python). Si no está, explica cómo bajarlo.
+  function cargarHistorial(){
+    if(soloLectura) return Promise.resolve();
+    return api("/api/historial").then(function(d){
+      if(!d.ok){
+        $("hbAyuda").classList.remove("oculto");
+        if(!hb.hist){
+          $("hbSalida").innerHTML = '<div class="sin-nada">'
+            + (d.falta ? 'Todavía no está <code>historial-carrefour.json</code> en la carpeta del programa. '
+                         + 'Seguí los pasos de arriba para traerlo.'
+                       : esc(d.error || "No se pudo leer el historial.")) + '</div>';
+        }
+        return;
+      }
+      $("hbAyuda").classList.add("oculto");
+      hb.hist = d;
+      pintarHabituales();
+      // Productos que no se consultaron nunca (historial nuevo): se consultan solos.
+      var faltan = d.items.some(function(h){ return !(h.id in hb.estado); });
+      if(faltan) consultarHabituales();
+    }, function(e){ aviso("No se pudo leer el historial: " + e.message); });
+  }
+
+  function consultarHabituales(){
+    if(soloLectura || hb.cargando || !hb.hist) return;
+    var ids = hb.hist.items.map(function(h){ return h.id; });
+    var tandas = [];
+    for(var i = 0; i < ids.length; i += HB_TANDA) tandas.push(ids.slice(i, i + HB_TANDA));
+    var hechas = 0, siguiente = 0, errores = 0, nuevo = {};
+    hb.cargando = true;
+    avisoGuardado("habituales", null);
+    hbCarga(2, "Consultando " + ids.length + " productos…");
+
+    return new Promise(function(listo){
+      function corredor(){
+        if(siguiente >= tandas.length){
+          if(hechas === tandas.length) listo();
+          return;
+        }
+        var tanda = tandas[siguiente++];
+        api("/api/habituales", { ids:tanda }).then(function(d){
+          if(!d.ok){ errores++; return; }
+          tanda.forEach(function(id){ nuevo[id] = d.productos[id] || false; });
+        }, function(){ errores++; }).then(function(){
+          hechas++;
+          // Lo que va llegando se ve en el acto, sin esperar al final.
+          tanda.forEach(function(id){ if(id in nuevo) hb.estado[id] = nuevo[id]; });
+          hbCarga(100 * hechas / tandas.length,
+                  "Consultando… " + Math.min(hechas * HB_TANDA, ids.length) + " de " + ids.length);
+          pintarHabituales();
+          corredor();
+        });
+      }
+      for(var k = 0; k < Math.min(HB_PARALELO, tandas.length); k++) corredor();
+    }).then(function(){
+      hb.cargando = false;
+      hb.consultado = new Date().toISOString();
+      hbCarga(100, errores ? "Listo, pero " + errores + " tandas no respondieron. Probá «Actualizar precios»."
+                           : "Listo: precios de hoy.", true);
+      pintarHabituales();
+      guardarSesion("habituales", { hist:hb.hist, estado:hb.estado });
+    });
   }
 
   // ---------- Lista ----------
@@ -2495,7 +3006,8 @@
   // El cartel azul arriba de los resultados. Con iso vacío se esconde: eso pasa
   // cuando lo que se ve es una búsqueda recién hecha y no hace falta aclarar nada.
   function avisoGuardado(cual, iso, detalle, completo){
-    var caja = $(cual === "ofertas" ? "ofAvisoGuardado" : "avisoGuardado");
+    var caja = $(cual === "ofertas" ? "ofAvisoGuardado"
+               : cual === "habituales" ? "hbAvisoGuardado" : "avisoGuardado");
     if(!iso){ caja.classList.add("oculto"); return; }
     // Pasado un día, los precios de Carrefour bien pueden haber cambiado.
     var viejo = (Date.now() - new Date(iso).getTime()) > 24 * 3600 * 1000;
@@ -2511,9 +3023,10 @@
 
   // ¿El JSON guardado tiene algo que valga la pena mostrar?
   function hayGuardado(d){
-    var L = d && d.lista, O = d && d.ofertas;
+    var L = d && d.lista, O = d && d.ofertas, H = d && d.habituales;
     return !!((L && L.resultados && L.resultados.length) ||
-              (O && O.items && O.items.length));
+              (O && O.items && O.items.length) ||
+              (H && H.hist && H.hist.items && H.hist.items.length));
   }
 
   // Rearma la pantalla con lo guardado, venga de donde venga: del servidor
@@ -2550,6 +3063,15 @@
       algo = true;
     }
 
+    var H = d && d.habituales;
+    if(H && H.hist && H.hist.items && H.hist.items.length){
+      hb.hist = H.hist;
+      hb.estado = H.estado || {};
+      hb.consultado = H.guardado || "";
+      avisoGuardado("habituales", H.guardado, H.hist.items.length + " productos de tu historial");
+      algo = true;
+    }
+
     // El chip de vigencia del encabezado habla de la pantalla que estás mirando.
     pintarVigencia(resultados.map(function(r){ return r.principal; }));
 
@@ -2557,6 +3079,7 @@
     // mirando una pantalla vacía no le sirve a nadie, y menos en el celular.
     // vista() repinta la vigencia, así que va después.
     if(!resultados.length && ofUsado) vista("ofertas");
+    else if(!resultados.length && hb.hist) vista("habituales");
     if(algo) aviso("Mostrando la última búsqueda guardada.");
     return algo;
   }
@@ -2613,7 +3136,7 @@
 
     // Fuera todo lo que necesita al servidor: buscar, guardar, descartar,
     // rebuscar (lo saca cajaRebuscar) y el panel de categorías del explorador.
-    ["btnGo", "btnGuardar", "btnRecargar", "ofPanelCats"].forEach(function(id){
+    ["btnGo", "btnGuardar", "btnRecargar", "ofPanelCats", "hbConsultar", "hbBtnAyuda"].forEach(function(id){
       $(id).classList.add("oculto");
     });
     Array.prototype.forEach.call(
@@ -2627,7 +3150,7 @@
     // sin explicación: acá se aclara que no falta nada, simplemente no se guardó.
     if(!resultados.length){
       $("salida").innerHTML = '<div class="sin-nada">Este archivo no trae ninguna búsqueda '
-                            + 'de tu lista. Mirá la pestaña "Explorar ofertas".</div>';
+                            + 'de tu lista. Mirá las otras pestañas.</div>';
     }
     if(!ofUsado){
       $("ofSalida").innerHTML = '<div class="sin-nada">Este archivo no trae ofertas guardadas. '
@@ -2635,7 +3158,8 @@
     }
     // La fecha del cartel es la más reciente de las dos partes (formato ISO:
     // ordenar como texto alcanza).
-    var fechas = [d.lista && d.lista.guardado, d.ofertas && d.ofertas.guardado]
+    var fechas = [d.lista && d.lista.guardado, d.ofertas && d.ofertas.guardado,
+                  d.habituales && d.habituales.guardado]
                    .filter(Boolean).sort();
     var cuando = fechas.length ? cuandoLindo(fechas[fechas.length - 1]) : "";
 
@@ -2757,6 +3281,7 @@
     pintarBarra();
     render();
     pintarOfertas();     // el explorador también tiene botones que desmarcar
+    pintarHabituales();
   };
 
   // ---------- Ampliar imagen al hacer click ----------
@@ -2784,7 +3309,8 @@
     if(d < 0){ document.body.classList.remove("bajando"); return; }
     if(catsAbierto) return;            // estás eligiendo categorías: no se mueve
     var esOf = !$("vistaOfertas").classList.contains("oculto");
-    var barra = esOf ? $("ofToolbar") : $("toolbar");
+    var esHb = !$("vistaHabituales").classList.contains("oculto");
+    var barra = esOf ? $("ofToolbar") : esHb ? $("hbToolbar") : $("toolbar");
     if(barra.classList.contains("oculto")) return;
     if(barra.getBoundingClientRect().top <= 1) document.body.classList.add("bajando");
   }, { passive:true });
@@ -2851,8 +3377,11 @@
     incluirTarjeta = !!v;
     $("chkTarjeta").checked = incluirTarjeta;
     $("ofChkTarjeta").checked = incluirTarjeta;
+    $("hbChkTarjeta").checked = incluirTarjeta;
     $("swTarjeta").classList.toggle("on", incluirTarjeta);
     $("ofSwTarjeta").classList.toggle("on", incluirTarjeta);
+    $("hbSwTarjeta").classList.toggle("on", incluirTarjeta);
+    pintarHabituales();
     // Cambian los precios efectivos, asi que se rehace todo lo que depende de
     // ellos: quien rinde mas, el principal y el orden. Sin volver a consultar.
     resultados.forEach(function(r){
@@ -2866,6 +3395,51 @@
   }
   $("chkTarjeta").onchange   = function(){ setTarjeta(this.checked); };
   $("ofChkTarjeta").onchange = function(){ setTarjeta(this.checked); };
+  $("hbChkTarjeta").onchange = function(){ setTarjeta(this.checked); };
+
+  // ---------- Lo que compro ----------
+  $("tabHabituales").onclick = function(){ vista("habituales"); };
+  $("hbTexto").oninput   = refiltrarHabituales;
+  $("hbVeces").onchange  = refiltrarHabituales;
+  $("hbPeriodo").onchange = cambiarPeriodo;
+  $("hbDesde").onchange   = function(){ guardarPeriodo(); refiltrarHabituales(); };
+  $("hbHasta").onchange   = function(){ guardarPeriodo(); refiltrarHabituales(); };
+  leerPeriodo();
+  $("hbEstado").onchange = refiltrarHabituales;
+  $("hbOrden").onchange  = refiltrarHabituales;
+  $("hbBtnMas").onclick  = function(){ hb.limite += 100; pintarHabituales(); };
+  $("hbConsultar").onclick = function(){ consultarHabituales(); };
+  $("hbBtnAyuda").onclick  = function(){ $("hbAyuda").classList.toggle("oculto"); };
+  $("hbLeer").onclick      = function(){ cargarHistorial(); };
+  // El favorito es el mismo código de "Copiar código", en una línea y como
+  // link javascript:. Se arrastra a la barra; acá tocarlo no hace nada.
+  $("hbFav").href = "javascript:" + encodeURIComponent(
+    $("hbCodigo").textContent.trim().split("\n").map(function(l){ return l.trim(); }).join(" "));
+  $("hbFav").onclick = function(){
+    aviso("Ese botón no se toca acá: arrastralo a la barra de favoritos de Brave.");
+    return false;
+  };
+  $("hbCopiar").onclick    = function(){
+    var b = $("hbCopiar"), txt = $("hbCodigo").textContent;
+    var hecho = function(){ b.textContent = "✓ Copiado"; setTimeout(function(){ b.textContent = "Copiar código"; }, 2500); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(hecho, function(){ aviso("No se pudo copiar."); });
+    }else{
+      var t = document.createElement("textarea");
+      t.value = txt; document.body.appendChild(t); t.select();
+      try{ document.execCommand("copy"); hecho(); }catch(e){ aviso("No se pudo copiar."); }
+      document.body.removeChild(t);
+    }
+  };
+  $("hbAvisoGuardado").querySelector(".g-nuevo").onclick = function(){ consultarHabituales(); };
+  $("hbAvisoGuardado").querySelector(".g-borrar").onclick = function(){
+    hb.estado = {};
+    hb.consultado = "";
+    guardarSesion("habituales", null);
+    avisoGuardado("habituales", null);
+    pintarHabituales();
+    aviso("Se borraron los precios guardados de lo que comprás.");
+  };
 
   // ---------- Explorador de ofertas ----------
   $("tabLista").onclick   = function(){ vista("lista"); };

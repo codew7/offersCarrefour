@@ -32,6 +32,8 @@ que la página. Por eso el problema de CORS desapareció por completo.
 | `categorias.txt` | Categorías marcadas en el explorador de ofertas. Lo escribe el botón "Guardar selección"; se puede editar a mano. Se crea recién la primera vez que guardás. |
 | `ultima-busqueda.json` | **La última búsqueda de cada pantalla**, para no repetirla al volver a abrir. Lo escribe Python solo, al terminar cada búsqueda. Borrarlo a mano equivale a "Descartar". Es también el archivo que se sube al hosting junto al HTML para mirar desde el celular. Ver "Los resultados quedan guardados" y "Modo lectura". |
 | `ultima-busqueda.js` | **El gemelo del anterior**, con el mismo contenido envuelto en `window.ULTIMA_BUSQUEDA = …`. Lo escribe Python al mismo tiempo. Existe sólo porque con doble clic (`file://`) el navegador no deja leer el `.json` pero sí un `<script>`. Ver "Modo lectura". |
+| `actualizar-historial.bat` + `actualizar_historial.py` | **Suma los pedidos nuevos** a `historial-carrefour.json`: abre Carrefour en Brave, espera a que toques el favorito "📥 Historial Carrefour" y toma la descarga. Doble clic. Ver "Pantalla 3 › El actualizador". |
+| `historial-carrefour.json` | **Tu historial de pedidos** de los últimos 12 meses, bajado desde tu cuenta de carrefour.com.ar. Lo lee la pestaña "Lo que compro". Son datos personales: no subirlo al hosting ni a git. Ver "Pantalla 3". |
 | `CARRITO_OFERTA_JULIO2026.txt` | Lista original de julio 2026. Referencia, no la lee el programa. |
 | `*.pdf` | Comprobantes sueltos, sin relación con esta herramienta. |
 
@@ -47,7 +49,9 @@ que la página. Por eso el problema de CORS desapareció por completo.
 | `GET /api/categorias` | Árbol de categorías aplanado, para el explorador de ofertas. |
 | `POST /api/ofertas` | `{cat, desde, paginas}` → un tramo de ofertas de esa categoría. |
 | `GET /api/sesion` | Lo guardado de la última búsqueda: `{lista:{…}, ofertas:{…}}`. |
-| `POST /api/sesion` | `{parte, datos}` → guarda **una** parte (`"lista"` u `"ofertas"`) y deja la otra como estaba. Con `datos:null` la borra. |
+| `GET /api/historial` | `historial-carrefour.json` agrupado por producto (`leer_historial()`). `{ok:false, falta:true}` si no está. |
+| `POST /api/habituales` | `{ids}` → estado de hoy de hasta 50 productos, **por productId** (`estado_por_ids()`). |
+| `POST /api/sesion` | `{parte, datos}` → guarda **una** parte (`"lista"`, `"ofertas"` o `"habituales"`) y deja la otra como estaba. Con `datos:null` la borra. |
 | `POST /api/salir` | Apaga el servidor. |
 
 ---
@@ -430,6 +434,120 @@ archivo al celular por mail o WhatsApp, suelto y sin el HTML al lado.
 > camino de dibujo. `hayGuardado(d)` es el chequeo compartido de "¿esto tiene algo?".
 
 ---
+
+## Pantalla 3: "Lo que compro" (historial de la cuenta)
+
+Pestaña del medio. Muestra el estado de hoy de **los productos exactos que compraste** en
+los últimos 12 meses: en oferta, precio actual contra lo que pagaste la última vez, sin
+stock o "ya no está en la tienda".
+
+### De dónde sale el historial — sin pasar la contraseña
+
+La app **no** inicia sesión en Carrefour ni guarda credenciales. El usuario entra a
+carrefour.com.ar en su Chrome, abre la consola (F12) y pega un código que la propia
+pantalla copia con el botón **Copiar código** (vive en `<script type="text/plain"
+id="hbCodigo">`, que no se ejecuta en esta página). Ese código corre **en el sitio de
+Carrefour** con su sesión, así que no hay CORS:
+
+```
+/api/oms/user/orders?page=N&per_page=50     → lista de pedidos (hasta 12 meses atrás)
+/api/oms/user/orders/<orderId>              → detalle con los items
+```
+
+Baja `historial-carrefour.json` con **sólo** los productos de cada pedido:
+`{exportado, pedidos:[{pedido, fecha, estado, items:[{sku, productId, refId, nombre,
+cantidad, precio, url, img}]}]}`. `precio` es `sellingPrice/100`: lo que se pagó por
+unidad **con el descuento ya aplicado**. Ni dirección ni medios de pago.
+
+> No es una llamada a carrefour.com.ar desde el JS de la app: el código lo pega el
+> usuario en la consola de Carrefour. La regla de "todo lo de red va en Python" sigue en pie.
+
+### El actualizador: favorito en Brave + `actualizar-historial.bat`
+
+El usuario usa **Brave** y quiere su perfil de siempre, con las contraseñas guardadas.
+Eso descarta manejar el navegador por DevTools: **desde Chromium 136 (Chrome y Brave)
+`--remote-debugging-port` no funciona sobre el perfil principal**, a propósito, contra el
+robo de sesiones. (La primera versión usaba un Chrome con perfil aparte y DevTools; se
+reemplazó por esto.) **No intentar leer las cookies del perfil** para esquivarlo.
+
+La solución es un **favorito (bookmarklet)** "📥 Historial Carrefour":
+
+- Es el **mismo código** de `<script type="text/plain" id="hbCodigo">`, en una línea, como
+  `javascript:`. Una sola copia: la app arma el link (`#hbFav`, se arrastra a la barra) y
+  `actualizar_historial.codigo_favorito()` lo lee del HTML para su página de instalación.
+  El código chequea que esté en `carrefour.com.ar`; si no, avisa.
+- Tocado en carrefour.com.ar con la sesión iniciada, baja `historial-carrefour.json` a
+  **Descargas** (Brave le pone `historial-carrefour (1).json` si ya existe: se acepta
+  cualquier `historial-carrefour*.json`).
+
+`actualizar_historial.py` (doble clic en `actualizar-historial.bat`):
+
+1. Abre carrefour.com.ar en Brave **sin `--user-data-dir`** (el perfil de siempre; si Brave
+   está abierto, suma una pestaña). Si no encuentra Brave, usa el navegador predeterminado.
+2. La primera vez (no existe `%LOCALAPPDATA%\verificador-carrefour\favorito-instalado`)
+   abre además `instalar-favorito.html`, generada ahí, con el botón para arrastrar.
+3. Mira las carpetas de descarga (`carpetas_descargas()`: la de las preferencias de Brave,
+   la de Descargas de Windows por registro y `~/Downloads`) hasta 15 minutos.
+4. `importar_descargas()` **suma, no reemplaza** (`unir()`: lo nuevo pisa por número de
+   pedido), escribe con `.tmp` + `os.replace()` y **borra la descarga**. Un archivo que
+   todavía se está bajando falla al leerse y se reintenta.
+
+Además `GET /api/historial` llama a `importar_descargas()` antes de leer: con la app
+abierta alcanza con tocar el favorito y después **Leer historial**, sin el `.bat`.
+
+Como el archivo crece, el recorte por fecha **no** lo hace Python: lo hace el filtro de
+período de la pantalla (ver "Filtro de período"). `leer_historial()` sólo descarta los
+pedidos cancelados.
+
+> No pasar `--remote-allow-origins=*`: el cliente no manda `Origin`, así que no hace falta,
+> y abrirlo dejaría a cualquier página manejar ese Chrome.
+
+### Cómo se consulta
+
+- `leer_historial()` agrupa por `productId`: `veces` (pedidos distintos en que aparece),
+  `unidades`, `ultima` (fecha), `ultimoPrecio`; el nombre y la foto son los de la última compra.
+  Además manda **`compras`**: una entrada por pedido, `[fecha, pedido, cantidad, precio]`,
+  ordenada por fecha. Esos totales son sobre todo el archivo; la pantalla los recalcula.
+- `estado_por_ids(ids)` usa el legacy con **`fq=productId:X` repetido** (hasta 50 por
+  pedido, `POR_CONSULTA_ID`). No se busca por nombre: es ese producto, sin puntaje.
+  Los que Carrefour ya no tiene simplemente no vuelven → la pantalla los marca `false`
+  ("Ya no está en la tienda").
+- **Ojo: es `productId`, no el `sku`.** Con el sku la consulta vuelve vacía sin error.
+- El navegador manda tandas de 50 con 4 en paralelo (`HB_TANDA`, `HB_PARALELO`): 460
+  productos tardan ~8 s. Al terminar se guarda en `ultima-busqueda.json` como la parte
+  `"habituales"` (`{hist, estado}`), así que también anda en **modo lectura**.
+- Al abrir la pestaña se relee siempre el historial; si trae productos que nunca se
+  consultaron, se consultan solos. "Actualizar precios" vuelve a consultar todo.
+
+### Filtro de período
+
+El primer desplegable de la barra (`#hbPeriodo`): último mes, 3, 6, **12 (por defecto)**,
+todo el historial, o "Elegir meses…", que muestra dos `<input type="month">`
+(`#hbDesde` / `#hbHasta`, meses incluidos; si van al revés se dan vuelta).
+
+- Es **independiente de lo descargado**: recorta `h.compras` en el navegador, sin volver a
+  consultar. `hbRango()` arma `{desde, hasta}`, `hbDelPeriodo(h, r)` devuelve el producto
+  con `veces` / `unidades` / `ultima` / `ultimoPrecio` **de ese período** (o `null` si no lo
+  compraste en esos meses) y `hbPeriodo()` hace la lista y cuenta los pedidos.
+- Todo lo de abajo usa esos valores: "Comprado N veces o más", la línea "Lo compraste…" y
+  el chip `hoy ±N%`, que compara contra **la última compra dentro del período**.
+- La elección se recuerda en `localStorage["carrefour.periodo"]`.
+- Un `habituales` guardado por una versión anterior no trae `compras`: ahí el período no
+  tiene efecto (se usan los totales) hasta que se vuelva a consultar.
+
+### La pantalla
+
+- Reusa `tarjetaOferta(p, mejores, extra)` del explorador; `extra` es la línea
+  "Lo compraste **N veces** · la última el 4/11 a **$X**" con el chip `hoy ±N%`
+  (`hbDiferencia()`: precio efectivo de hoy, con promo de varias unidades, contra
+  `ultimoPrecio`). **Lo que se vende por peso (`multiplo ≠ 1`) no se compara**: el precio
+  del pedido y el del catálogo no se miden igual.
+- Sin stock / ya no está / sin consultar: tarjeta gris `.oc.apagada` con los datos del historial.
+- Filtros en memoria: período (ver arriba), veces mínimas en ese período (por defecto **2 o más**), estado (oferta, más barato
+  que la última vez, sin stock, ya no está), texto y orden (por defecto **en oferta primero**,
+  después más comprados). Se dibujan de a 100 con "Ver más".
+- Carrito, selector de Tarjeta (tercera copia: `hbChkTarjeta`), precio por medida y
+  tarjeta amarilla de "el que más rinde" son los mismos de siempre.
 
 ## Pantalla 2: explorador de ofertas
 
@@ -1018,3 +1136,4 @@ Detalles que muerden:
 - Comparación contra el precio estimado de `CARRITO_OFERTA_JULIO2026.txt`.
 - Exportar el resultado a xlsx.
 - Guardar un histórico para ver cómo evoluciona cada precio.
+- Unir varios `historial-carrefour.json` para cubrir más de 12 meses.

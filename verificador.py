@@ -45,6 +45,8 @@ SESION = os.path.join(CARPETA, "ultima-busqueda.json")
 # al lado, pero un <script src="..."> si carga. Con esto el modo lectura anda
 # tambien sin servidor y sin hosting. Ver "Modo lectura" en CLAUDE.md.
 SESION_JS = os.path.join(CARPETA, "ultima-busqueda.js")
+# Historial de pedidos de tu cuenta, bajado desde carrefour.com.ar (ver CLAUDE.md).
+HISTORIAL = os.path.join(CARPETA, "historial-carrefour.json")
 
 PUERTO_PREFERIDO = 8765
 BASE = "https://www.carrefour.com.ar"
@@ -894,7 +896,7 @@ def guardar_seleccion_cats(items):
 #
 # Es un archivo comun de la carpeta: se puede borrar a mano para empezar de cero.
 SESION_LOCK = threading.Lock()
-PARTES_SESION = ("lista", "ofertas")
+PARTES_SESION = ("lista", "ofertas", "habituales")
 
 
 def leer_sesion():
@@ -1060,6 +1062,90 @@ def explorar_ofertas(cat_id, desde=0, paginas=EN_PARALELO):
 
 
 # ----------------------------------------------------------------------
+# Lo que compro: el historial de pedidos de tu cuenta
+# ----------------------------------------------------------------------
+# historial-carrefour.json lo baja el propio usuario desde carrefour.com.ar con
+# la sesion iniciada (ver CLAUDE.md, "Lo que compro"). Trae cada producto con su
+# productId, asi que aca no hay nada que adivinar: se consulta ESE producto.
+POR_CONSULTA_ID = 50      # el legacy devuelve hasta 50 por pedido
+def leer_historial():
+    """Agrupa el historial por producto y le agrega `compras`: una entrada por
+    pedido, [fecha, pedido, cantidad, precio]. Con eso la pantalla recalcula
+    veces / ultima / ultimoPrecio para el periodo que elijas, sin volver a
+    pedirle nada a Python. Los totales de aca son sobre TODO el archivo.
+    Los pedidos cancelados quedan afuera: no son compras."""
+    with open(HISTORIAL, "r", encoding="utf-8") as f:
+        d = json.load(f)
+    pedidos = [o for o in d.get("pedidos") or []
+               if "cancel" not in str(o.get("estado") or "").lower()]
+    prods = {}
+    fechas = []
+    for o in pedidos:
+        fecha = str(o.get("fecha") or "")[:10]
+        if fecha:
+            fechas.append(fecha)
+        en_este = {}
+        for i in o.get("items") or []:
+            pid = str(i.get("productId") or "")
+            if not pid:
+                continue
+            h = prods.get(pid)
+            if not h:
+                h = prods[pid] = {"id": pid, "sku": str(i.get("sku") or ""),
+                                  "nombre": i.get("nombre") or "", "img": i.get("img") or "",
+                                  "url": i.get("url") or "", "veces": 0, "unidades": 0,
+                                  "ultima": "", "ultimoPrecio": None, "primera": fecha,
+                                  "compras": []}
+            try:
+                cant = float(i.get("cantidad") or 0)
+            except (TypeError, ValueError):
+                cant = 0
+            precio = i.get("precio")
+            precio = precio if isinstance(precio, (int, float)) and precio > 0 else None
+            h["unidades"] += cant
+            if pid in en_este:
+                # El mismo producto dos veces en un pedido: una sola compra.
+                en_este[pid][2] += cant
+            else:
+                h["veces"] += 1
+                en_este[pid] = [fecha, str(o.get("pedido") or ""), cant, precio]
+                h["compras"].append(en_este[pid])
+            if fecha and fecha >= h["ultima"]:
+                # El nombre, la foto y el precio que valen son los de la ultima compra.
+                h["ultima"] = fecha
+                h["nombre"] = i.get("nombre") or h["nombre"]
+                h["img"] = i.get("img") or h["img"]
+                h["ultimoPrecio"] = precio
+            if fecha and (not h["primera"] or fecha < h["primera"]):
+                h["primera"] = fecha
+    for h in prods.values():
+        h["compras"].sort(key=lambda c: c[0])
+    items = sorted(prods.values(), key=lambda h: (-h["veces"], h["nombre"].lower()))
+    return {"pedidos": len(pedidos), "desde": min(fechas) if fechas else "",
+            "hasta": max(fechas) if fechas else "", "exportado": d.get("exportado") or "",
+            "items": items}
+
+
+def estado_por_ids(ids):
+    """Estado de hoy de una tanda de productos, buscados por productId (hasta 50).
+    Los que Carrefour ya no tiene en el catalogo simplemente no vuelven."""
+    ids = [str(x) for x in ids if str(x).isdigit()][:POR_CONSULTA_ID]
+    if not ids:
+        return {}
+    url = (BASE + "/api/catalog_system/pub/products/search?"
+           + "&".join("fq=productId:" + x for x in ids)
+           + "&_from=0&_to=%d" % (POR_CONSULTA_ID - 1))
+    crudos = con_cache("IDS:" + ",".join(sorted(ids)), lambda: pedir_json(url))
+    salida = {}
+    for p in crudos if isinstance(crudos, list) else []:
+        d = parsear(p)
+        d["cat"] = nombre_categoria(p)
+        d["score"] = 1.0
+        salida[d["id"]] = d
+    return salida
+
+
+# ----------------------------------------------------------------------
 # Servidor local
 # ----------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
@@ -1100,6 +1186,22 @@ class Handler(BaseHTTPRequestHandler):
             except FileNotFoundError:
                 return self._responder(500, "Falta verificador-carrefour.html en la carpeta.",
                                        "text/plain; charset=utf-8")
+
+        if ruta == "/api/historial":
+            try:
+                # Lo que haya bajado el favorito "Historial Carrefour" a Descargas
+                # se suma antes de leer (ver actualizar_historial.py).
+                try:
+                    import actualizar_historial
+                    actualizar_historial.importar_descargas()
+                except Exception:
+                    pass
+                return self._json(dict(leer_historial(), ok=True))
+            except FileNotFoundError:
+                return self._json({"ok": False, "falta": True, "items": []})
+            except Exception as e:
+                return self._json({"ok": False, "items": [],
+                                   "error": "No se pudo leer historial-carrefour.json: %s" % e})
 
         if ruta == "/api/articulos":
             try:
@@ -1154,6 +1256,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"cat": cat, "items": [], "fin": True,
                                    "leidas": 0, "productos": 0,
                                    "error": "Error inesperado: %s" % e})
+
+        if ruta == "/api/habituales":
+            try:
+                return self._json({"ok": True, "productos": estado_por_ids(datos.get("ids") or [])})
+            except Exception as e:
+                return self._json({"ok": False, "productos": {}, "error": str(e)})
 
         if ruta == "/api/sesion":
             try:
