@@ -701,14 +701,14 @@
 
     <div class="fila-tabs">
       <div class="tabs">
-        <button class="tab on" id="tabLista">Mi lista</button>
-        <button class="tab" id="tabHabituales">Lo que compro</button>
+        <button class="tab" id="tabLista">Mi lista</button>
+        <button class="tab on" id="tabHabituales">Lo que compro</button>
         <button class="tab" id="tabOfertas">Explorar ofertas</button>
       </div>
     </div>
 
     <!-- ============ Pantalla 3: lo que compro (historial de la cuenta) ============ -->
-    <div id="vistaHabituales" class="oculto">
+    <div id="vistaHabituales">
 
       <!-- Cómo bajar / actualizar historial-carrefour.json. Se abre sola si falta. -->
       <section class="panel hb-ayuda oculto" id="hbAyuda">
@@ -758,8 +758,8 @@
           <select id="hbPeriodo" title="Qué meses del historial tener en cuenta">
             <option value="1">Último mes</option>
             <option value="3">Últimos 3 meses</option>
-            <option value="6">Últimos 6 meses</option>
-            <option value="12" selected>Últimos 12 meses</option>
+            <option value="6" selected>Últimos 6 meses</option>
+            <option value="12">Últimos 12 meses</option>
             <option value="todo">Todo el historial</option>
             <option value="meses">Elegir meses…</option>
           </select>
@@ -783,11 +783,11 @@
             <option value="nohay">Ya no está en la tienda</option>
           </select>
           <select id="hbOrden" title="Ordenar">
-            <option value="oferta" selected>En oferta primero</option>
+            <option value="oferta">En oferta primero</option>
             <option value="veces">Más comprados</option>
             <option value="desc">Mayor descuento</option>
             <option value="baja">Mayor baja de precio</option>
-            <option value="nombre">Nombre (A-Z)</option>
+            <option value="nombre" selected>Nombre (A-Z)</option>
           </select>
           <label class="switch" id="hbSwTarjeta"
                  title="Promos que sólo aplican pagando con Tarjeta Carrefour o Cuenta Digital Carrefour">
@@ -924,7 +924,7 @@
     </div>
 
     <!-- ============ Pantalla 1: tu lista ============ -->
-    <div id="vistaLista">
+    <div id="vistaLista" class="oculto">
 
     <section class="panel abierto" id="panelLista">
       <button class="plegable" id="btnPlegar" aria-expanded="true">
@@ -1616,7 +1616,8 @@
   // ---------- Bloque de precios ----------
   // Si hay una promo de varias unidades, el numero grande pasa a ser el precio
   // POR UNIDAD aprovechandola, y abajo se aclara cuanto hay que llevar y el total.
-  function bloquePrecios(p){
+  // sinMedida: no dibuja el "≈ $X por kilo" ("Lo que compro" no lo usa).
+  function bloquePrecios(p, sinMedida){
     var pr = promoUnitaria(p);
     var h = '<div class="precios">';
 
@@ -1630,7 +1631,7 @@
          + (p.desc > 0 ? '<span class="tachado">' + plata(p.lista) + '</span>'
                        + '<span class="off">-' + p.desc + '%</span>' : '');
     }
-    var pm = porMedida(p);
+    var pm = sinMedida ? null : porMedida(p);
     if(pm){
       h += '<span class="xu" title="Estimado a partir del tamaño que dice el nombre">≈ '
          + plata(pm.valor) + ' por ' + pm.uni.nombre + '</span>';
@@ -1714,10 +1715,23 @@
     return Object.keys(seleccion).map(function(k){ return seleccion[k]; });
   }
 
-  // La cantidad que se manda sale SIEMPRE de acá: un entero entre 1 y 99.
-  function cantValida(v){
-    return Math.min(99, Math.max(1, parseInt(v, 10) || 1));
+  // La cantidad que se manda sale SIEMPRE de acá: un entero entre 1 y el tope
+  // (99, o lo que haya en stock online si es menos: Carrefour no deja pedir
+  // más de lo que tiene y lo baja solo en el carrito, sin avisar).
+  function cantValida(v, tope){
+    return Math.min(tope || 99, Math.max(1, parseInt(v, 10) || 1));
   }
+
+  function topeDe(p){
+    var st = parseInt(p && p.stock, 10);
+    // Lo que se vende por peso mide el stock en otra unidad: no se topea.
+    return (st > 0 && st < 99 && (+p.multiplo || 1) === 1) ? st : 99;
+  }
+
+  // Lo que tipeaste en una casilla ANTES de tocar "Agregar". Sin esto, si la
+  // pantalla se redibujaba en el medio (pasa mientras llegan los precios) la
+  // casilla volvía al número de antes y se agregaba ése.
+  var cantTipeada = {};      // sku -> número
 
   // El mismo producto puede estar en dos tarjetas a la vez (dos líneas de tu
   // lista que dieron lo mismo, o repetido en el explorador). Como el carrito se
@@ -1755,7 +1769,8 @@
     // Si hay promo de varias unidades, la cantidad arranca en la que la activa.
     var pr = promoUnitaria(p);
     var ya = seleccion[p.sku];
-    var cant = ya ? ya.cant : (pr ? pr.unidades : 1);
+    var tope = topeDe(p);
+    var cant = cantValida(ya ? ya.cant : (cantTipeada[p.sku] || (pr ? pr.unidades : 1)), tope);
 
     // Aviso de "múltiplo": lo que Carrefour vende por peso suma menos de una
     // unidad por vez (pedís 1 y en el carrito aparece 0,5 kg). Es una de las
@@ -1766,9 +1781,13 @@
           + ': cada unidad que pidas suma ' + numero(m) + ' ' + esc(p.unidadMedida || "un") + ' al carrito.">'
           + '1 = ' + numero(m) + ' ' + esc(p.unidadMedida || "un") + ' en el carrito</div>'
       : '';
+    if(tope < 99){
+      nota += '<div class="cant-nota" title="Carrefour no deja pedir más de lo que tiene online.">'
+            + 'Quedan ' + tope + ' online: no se pueden pedir más</div>';
+    }
 
     return '<div class="acciones">'
-         + '<input class="cant" type="number" min="1" max="99" step="1" value="' + cant + '" '
+         + '<input class="cant" type="number" min="1" max="' + tope + '" step="1" value="' + cant + '" '
          + 'data-cant="' + esc(p.sku) + '" title="Cantidad" aria-label="Cantidad">'
          + '<button class="btn-cart' + (ya ? " puesto" : "") + '" data-cart="' + esc(p.sku) + '">'
          + (ya ? "✓ Agregado · quitar" : "Agregar al carrito") + '</button>'
@@ -1802,7 +1821,8 @@
           // otra y por eso al carrito llegaba un número que no era el que veías.
           var inp = b.parentNode.querySelector("[data-cant]")
                  || cont.querySelector('[data-cant="' + sku + '"]');
-          var n = cantValida(inp && inp.value);
+          var n = cantValida(inp && inp.value, topeDe(p));
+          delete cantTipeada[sku];
           seleccion[sku] = { sku:sku, vendedor:p.vendedor || "1", cant:n, nombre:p.nombre,
                              multiplo:+p.multiplo || 1, unidadMedida:p.unidadMedida || "un" };
           sincronizarCant(sku, n);
@@ -1842,8 +1862,9 @@
       inp.oninput = function(){
         var sku = inp.getAttribute("data-cant");
         if(inp.value === "") return;          // te estás por arrepentir: no se toca
-        var n = cantValida(inp.value);
-        if(seleccion[sku]){
+        var n = cantValida(inp.value, +inp.max);
+        if(!seleccion[sku]) cantTipeada[sku] = n;
+        else{
           seleccion[sku].cant = n;
           sincronizarCant(sku, n);
           guardarCarritoLocal();
@@ -1852,8 +1873,9 @@
       // Al salir del campo se normaliza lo que quedó escrito (vacío, 0, "abc").
       inp.onblur = function(){
         var sku = inp.getAttribute("data-cant");
-        var n = cantValida(inp.value);
+        var n = cantValida(inp.value, +inp.max);
         inp.value = n;
+        if(!seleccion[sku]) cantTipeada[sku] = n;
         if(seleccion[sku] && seleccion[sku].cant !== n){
           seleccion[sku].cant = n;
           sincronizarCant(sku, n);
@@ -2565,8 +2587,8 @@
   }
 
   // extra: HTML opcional que va debajo del nombre ("Lo que compro" lo usa para
-  // decir cuántas veces lo compraste y a cuánto).
-  function tarjetaOferta(p, mejores, extra){
+  // decir cuántas veces lo compraste y a cuánto). sinMedida: sin precio por kilo/litro.
+  function tarjetaOferta(p, mejores, extra, sinMedida){
     var soloTarj = soloPorTarjeta(p);
     var sub = subcategoria(p.cat);
     // El que más rinde de su subcategoría no lleva cartel: se pinta de amarillo
@@ -2587,7 +2609,7 @@
           + '</div></div>'
           + (extra || '')
           + (soloTarj ? '<span class="oc-tarj">SÓLO CON TARJETA</span>' : '')
-          + bloquePrecios(p);
+          + bloquePrecios(p, sinMedida);
 
     var chips = (p.promos || []).map(function(t){ return '<span class="promo">' + esc(t) + '</span>'; });
     if(incluirTarjeta){
@@ -2640,8 +2662,6 @@
   // Python manda cada compra con su fecha (h.compras = [[fecha, pedido, cant,
   // precio], …]) y acá se recalcula todo para los meses elegidos, sin volver a
   // consultar nada. Es independiente de cuánto historial haya en el archivo.
-  var CLAVE_PERIODO = "carrefour.periodo";
-
   function isoDia(d){
     return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
   }
@@ -2700,24 +2720,6 @@
     return { rango:r, items:items, pedidos:Object.keys(pedidos).length };
   }
 
-  function guardarPeriodo(){
-    try{
-      localStorage.setItem(CLAVE_PERIODO, JSON.stringify({
-        v:$("hbPeriodo").value, desde:$("hbDesde").value, hasta:$("hbHasta").value }));
-    }catch(e){ /* sin localStorage: vuelve a "12 meses" al reabrir */ }
-  }
-
-  function leerPeriodo(){
-    try{
-      var g = JSON.parse(localStorage.getItem(CLAVE_PERIODO) || "null");
-      if(!g) return;
-      if($("hbPeriodo").querySelector('option[value="' + g.v + '"]')) $("hbPeriodo").value = g.v;
-      $("hbDesde").value = g.desde || "";
-      $("hbHasta").value = g.hasta || "";
-    }catch(e){}
-    $("hbMeses").classList.toggle("oculto", $("hbPeriodo").value !== "meses");
-  }
-
   // Los selectores de mes se limitan a lo que hay en el historial y, si están
   // vacíos, arrancan en "todo el historial" para que tengas desde dónde mover.
   function prepararMeses(){
@@ -2732,7 +2734,6 @@
     var meses = $("hbPeriodo").value === "meses";
     $("hbMeses").classList.toggle("oculto", !meses);
     if(meses) prepararMeses();
-    guardarPeriodo();
     refiltrarHabituales();
   }
 
@@ -2785,12 +2786,14 @@
     return '<div class="hb-hist">' + t + '</div>';
   }
 
-  function tarjetaHabitual(f, mejores){
+  // Acá no va el precio por kilo/litro ni la tarjeta amarilla del que más rinde:
+  // son productos que ya elegiste, no hay que compararlos entre sí.
+  function tarjetaHabitual(f){
     var p = f.p;
     if(p && p.disponible && p.precio){
       var extra = hbLineaHist(f)
                 + (esOferta(p) && !soloPorTarjeta(p) ? '<span class="hb-of">EN OFERTA</span>' : '');
-      return tarjetaOferta(p, mejores, extra);
+      return tarjetaOferta(p, null, extra, true);
     }
     // Sin stock, ya no está, o todavía sin consultar: se muestra lo del historial.
     var h = f.h;
@@ -2847,9 +2850,7 @@
     }
     var conPrecio = filas.filter(function(f){ return f.p && f.p.disponible && f.p.precio; })
                          .map(function(f){ return f.p; });
-    var mejores = mejoresPorSubcategoria(conPrecio);
-    cont.innerHTML = filas.slice(0, hb.limite)
-      .map(function(f){ return tarjetaHabitual(f, mejores); }).join("");
+    cont.innerHTML = filas.slice(0, hb.limite).map(tarjetaHabitual).join("");
     conectarTarjetas(cont);
     $("hbMas").classList.toggle("oculto", filas.length <= hb.limite);
     $("hbBtnMas").textContent = "Ver más (" + (filas.length - hb.limite) + " restantes)";
@@ -3078,8 +3079,13 @@
     // Si lo único guardado son las ofertas, se abre ahí: quedarse en "Mi lista"
     // mirando una pantalla vacía no le sirve a nadie, y menos en el celular.
     // vista() repinta la vigencia, así que va después.
-    if(!resultados.length && ofUsado) vista("ofertas");
-    else if(!resultados.length && hb.hist) vista("habituales");
+    // Se abre siempre en "Lo que compro". En modo lectura, si el archivo no
+    // trae tus compras, se va a la pantalla que sí tenga algo.
+    if(soloLectura){
+      if(hb.hist || (!ofUsado && !resultados.length)) vista("habituales");
+      else if(ofUsado) vista("ofertas");
+      else vista("lista");
+    }
     if(algo) aviso("Mostrando la última búsqueda guardada.");
     return algo;
   }
@@ -3253,10 +3259,11 @@
     // y lo que después aparece allá.
     if(carritoEnviado){
       var ok = window.confirm(
-        "Este carrito ya se envió una vez.\n\n" +
+        "Ya mandaste artículos al carrito de Carrefour desde acá.\n\n" +
         "Carrefour SUMA lo que mandes a lo que ya tenga en el carrito: no lo " +
-        "reemplaza. Si volvés a enviar sin vaciar el carrito en la web, las " +
-        "cantidades quedan duplicadas.\n\n¿Enviar igual?");
+        "reemplaza. Si allá quedó algo de antes, las cantidades se suman " +
+        "(por ejemplo, 2 + 2 = 4).\n\nSi ya vaciaste el carrito en la web de " +
+        "Carrefour, o ya compraste, aceptá. ¿Enviar?");
       if(!ok) return;
     }
 
@@ -3275,8 +3282,11 @@
     pintarBarra();
   };
   $("ccVaciar").onclick = function(){
+    // Ojo: esto vacía la lista de ACÁ, no el carrito de Carrefour. Por eso
+    // carritoEnviado no se apaga: lo que mandaste antes sigue allá, y lo nuevo
+    // se le sumaría sin aviso (otra causa de cantidades que no coincidían).
     seleccion = {};
-    carritoEnviado = false;
+    cantTipeada = {};
     guardarCarritoLocal();
     pintarBarra();
     render();
@@ -3402,9 +3412,8 @@
   $("hbTexto").oninput   = refiltrarHabituales;
   $("hbVeces").onchange  = refiltrarHabituales;
   $("hbPeriodo").onchange = cambiarPeriodo;
-  $("hbDesde").onchange   = function(){ guardarPeriodo(); refiltrarHabituales(); };
-  $("hbHasta").onchange   = function(){ guardarPeriodo(); refiltrarHabituales(); };
-  leerPeriodo();
+  $("hbDesde").onchange   = refiltrarHabituales;
+  $("hbHasta").onchange   = refiltrarHabituales;
   $("hbEstado").onchange = refiltrarHabituales;
   $("hbOrden").onchange  = refiltrarHabituales;
   $("hbBtnMas").onclick  = function(){ hb.limite += 100; pintarHabituales(); };
@@ -3546,7 +3555,9 @@
     $("app").classList.remove("oculto");
     // Primero la lista de artículos (el archivo manda) y después lo guardado
     // de la última búsqueda, que es lo que rearma la pantalla.
-    return cargarArchivo().then(recuperarSesion, recuperarSesion);
+    // Al terminar, se abre en "Lo que compro" (relee el historial solo).
+    return cargarArchivo().then(recuperarSesion, recuperarSesion)
+      .then(function(){ vista("habituales"); });
   }, function(){
     return leerArchivoSesion().then(function(d){
       if(hayGuardado(d)) entrarModoLectura(d);

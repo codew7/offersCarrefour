@@ -258,11 +258,21 @@ era un bug del código: es cómo funciona Carrefour. "Jamón cocido Paladini x k
 frutas, verduras, carne y quesos de horma. `parsear()` ahora manda `multiplo` y
 `unidadMedida`, y la tarjeta lo dice abajo del botón: **"1 = 0,2 kg en el carrito"**.
 
-> **Y una cuarta, que no se puede arreglar del todo:** `/checkout/cart/add` **SUMA** a
+**4. Lo tipeado antes de tocar "Agregar" se perdía.** El `oninput` sólo guardaba si el
+artículo ya estaba marcado; si la pantalla se redibujaba antes del click (pasa mientras
+llegan precios), la casilla volvía al número viejo. Ahora va a `cantTipeada[sku]`.
+
+**5. Más de lo que hay en stock.** Carrefour baja la cantidad sola. Python manda `stock`
+(`AvailableQuantity`; casi siempre 99999) y `topeDe(p)` limita la casilla con un aviso
+"Quedan N online". No se aplica a lo que se vende por peso.
+
+> **Y una sexta, que no se puede arreglar del todo:** `/checkout/cart/add` **SUMA** a
 > lo que ya haya en el carrito de Carrefour, no lo reemplaza. Mandar dos veces el mismo
 > carrito deja el doble de todo. Como no hay forma de fijar una cantidad absoluta desde
 > la URL, la app se acuerda de si ya envió (`carritoEnviado`), muestra el chip amarillo
-> "ya enviado" en la barra flotante y pide confirmación antes de reenviar. Si de verdad
+> "ya enviado" en la barra flotante y pide confirmación antes de reenviar. **"Vaciar" no
+> apaga `carritoEnviado`**: vacía la lista de acá, no el carrito de Carrefour (antes lo
+> apagaba y lo siguiente se sumaba sin aviso). Si de verdad
 > querés reenviar, hay que vaciar el carrito **en la web de Carrefour** primero.
 
 También hay un tope: pasados los ~1900 caracteres de URL, Carrefour la corta sola y
@@ -437,7 +447,8 @@ archivo al celular por mail o WhatsApp, suelto y sin el HTML al lado.
 
 ## Pantalla 3: "Lo que compro" (historial de la cuenta)
 
-Pestaña del medio. Muestra el estado de hoy de **los productos exactos que compraste** en
+Pestaña del medio y **la que se abre por defecto** (`vista("habituales")` al final del
+arranque; en modo lectura sólo si el archivo trae compras). Muestra el estado de hoy de **los productos exactos que compraste** en
 los últimos 12 meses: en oferta, precio actual contra lo que pagaste la última vez, sin
 stock o "ya no está en la tienda".
 
@@ -521,7 +532,7 @@ pedidos cancelados.
 
 ### Filtro de período
 
-El primer desplegable de la barra (`#hbPeriodo`): último mes, 3, 6, **12 (por defecto)**,
+El primer desplegable de la barra (`#hbPeriodo`): último mes, 3, **6 (por defecto)**, 12,
 todo el historial, o "Elegir meses…", que muestra dos `<input type="month">`
 (`#hbDesde` / `#hbHasta`, meses incluidos; si van al revés se dan vuelta).
 
@@ -531,7 +542,8 @@ todo el historial, o "Elegir meses…", que muestra dos `<input type="month">`
   compraste en esos meses) y `hbPeriodo()` hace la lista y cuenta los pedidos.
 - Todo lo de abajo usa esos valores: "Comprado N veces o más", la línea "Lo compraste…" y
   el chip `hoy ±N%`, que compara contra **la última compra dentro del período**.
-- La elección se recuerda en `localStorage["carrefour.periodo"]`.
+- **No se recuerda**: al abrir vuelve siempre a 6 meses (lo pidió el usuario; antes iba en
+  `localStorage["carrefour.periodo"]` y pisaba el valor por defecto).
 - Un `habituales` guardado por una versión anterior no trae `compras`: ahí el período no
   tiene efecto (se usan los totales) hasta que se vuelva a consultar.
 
@@ -544,10 +556,10 @@ todo el historial, o "Elegir meses…", que muestra dos `<input type="month">`
   del pedido y el del catálogo no se miden igual.
 - Sin stock / ya no está / sin consultar: tarjeta gris `.oc.apagada` con los datos del historial.
 - Filtros en memoria: período (ver arriba), veces mínimas en ese período (por defecto **2 o más**), estado (oferta, más barato
-  que la última vez, sin stock, ya no está), texto y orden (por defecto **en oferta primero**,
-  después más comprados). Se dibujan de a 100 con "Ver más".
-- Carrito, selector de Tarjeta (tercera copia: `hbChkTarjeta`), precio por medida y
-  tarjeta amarilla de "el que más rinde" son los mismos de siempre.
+  que la última vez, sin stock, ya no está), texto y orden (por defecto **nombre A-Z**). Se dibujan de a 100 con "Ver más".
+- Carrito y selector de Tarjeta (tercera copia: `hbChkTarjeta`) son los mismos de siempre.
+  **Sin precio por kilo/litro ni tarjeta amarilla de "el que más rinde"**: lo pidió el usuario
+  (`tarjetaOferta(p, null, extra, true)` → `bloquePrecios(p, sinMedida)`).
 
 ## Pantalla 2: explorador de ofertas
 

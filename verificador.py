@@ -570,6 +570,13 @@ def _vendible(of):
                 and isinstance(precio, (int, float)) and precio > 0)
 
 
+def _stock(of):
+    try:
+        return int(of.get("AvailableQuantity") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _oferta_de(it):
     sellers = (it or {}).get("sellers") or [{}]
     s = sellers[0] if sellers else {}
@@ -644,6 +651,9 @@ def parsear(p):
         # Lo que suma una unidad en el carrito de Carrefour (ver arriba).
         "multiplo": multiplo,
         "unidadMedida": unidad,
+        # Cuanto hay online. Carrefour no deja pedir mas que eso y lo baja solo
+        # en el carrito: la pantalla topea la cantidad para que coincida.
+        "stock": _stock(of),
         "precio": precio,
         "lista": lista,
         "desc": desc,
