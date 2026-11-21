@@ -1158,6 +1158,61 @@ def estado_por_ids(ids):
 # ----------------------------------------------------------------------
 # Servidor local
 # ----------------------------------------------------------------------
+# Actualizar el historial ANTES de cada búsqueda
+#
+# La pantalla lo pide al tocar "Actualizar precios", "Verificar precios" o
+# "Buscar ofertas": se abre carrefour.com.ar en Brave (como el .bat), vos tocás
+# el favorito "📥 Historial Carrefour", y la pantalla pregunta cada tanto si ya
+# llegó la descarga. Es el mismo actualizar_historial.py, por partes.
+# ----------------------------------------------------------------------
+SYNC = {"inicio": 0.0}
+
+
+def sync_historial(accion):
+    import actualizar_historial as ah
+    if accion == "abrir":
+        SYNC["inicio"] = time.time() - 2
+        ah.abrir(ah.INICIO)
+        if not os.path.exists(ah.FAVORITO_OK):
+            ah.abrir("file:///" + ah.preparar_pagina_favorito().replace("\\", "/"))
+        return {"ok": True}
+
+    inicio = SYNC["inicio"]
+    if not inicio:
+        return {"ok": True, "listo": False}
+    if ah.descargas_nuevas(inicio):
+        time.sleep(1.5)             # Brave lo escribe de a poco
+        agregados, productos, total = ah.importar_descargas(inicio)
+        if total:
+            SYNC["inicio"] = 0.0
+            os.makedirs(ah.DATOS, exist_ok=True)
+            open(ah.FAVORITO_OK, "w").close()
+            return {"ok": True, "listo": True, "agregados": agregados,
+                    "productos": productos, "total": total}
+        return {"ok": True, "listo": False}
+    # Por si otro pedido (GET /api/historial) ya la importó primero.
+    try:
+        if os.path.getmtime(ah.HISTORIAL) >= inicio:
+            SYNC["inicio"] = 0.0
+            return {"ok": True, "listo": True, "agregados": None}
+    except OSError:
+        pass
+    return {"ok": True, "listo": False}
+
+
+# Archivos sueltos que hacen falta para instalar la página en el celular
+# (manifiesto, service worker e íconos). Lista cerrada: no se sirve otra cosa.
+ESTATICOS = {
+    "/manifest.webmanifest": ("manifest.webmanifest", "application/manifest+json"),
+    "/sw.js": ("sw.js", "text/javascript; charset=utf-8"),
+    "/iconos/icono-192.png": ("iconos/icono-192.png", "image/png"),
+    "/iconos/icono-512.png": ("iconos/icono-512.png", "image/png"),
+    "/iconos/icono-maskable-512.png": ("iconos/icono-maskable-512.png", "image/png"),
+    "/iconos/icono-apple-180.png": ("iconos/icono-apple-180.png", "image/png"),
+}
+
+
+# ----------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -1196,6 +1251,14 @@ class Handler(BaseHTTPRequestHandler):
             except FileNotFoundError:
                 return self._responder(500, "Falta verificador-carrefour.html en la carpeta.",
                                        "text/plain; charset=utf-8")
+
+        if ruta in ESTATICOS:
+            nombre, tipo = ESTATICOS[ruta]
+            try:
+                with open(os.path.join(CARPETA, nombre), "rb") as f:
+                    return self._responder(200, f.read(), tipo)
+            except FileNotFoundError:
+                return self._responder(404, "No existe", "text/plain; charset=utf-8")
 
         if ruta == "/api/historial":
             try:
@@ -1272,6 +1335,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "productos": estado_por_ids(datos.get("ids") or [])})
             except Exception as e:
                 return self._json({"ok": False, "productos": {}, "error": str(e)})
+
+        if ruta == "/api/sync-historial":
+            try:
+                return self._json(sync_historial(datos.get("accion")))
+            except Exception as e:
+                return self._json({"ok": False, "error": str(e)})
 
         if ruta == "/api/sesion":
             try:

@@ -34,6 +34,7 @@ que la página. Por eso el problema de CORS desapareció por completo.
 | `ultima-busqueda.js` | **El gemelo del anterior**, con el mismo contenido envuelto en `window.ULTIMA_BUSQUEDA = …`. Lo escribe Python al mismo tiempo. Existe sólo porque con doble clic (`file://`) el navegador no deja leer el `.json` pero sí un `<script>`. Ver "Modo lectura". |
 | `actualizar-historial.bat` + `actualizar_historial.py` | **Suma los pedidos nuevos** a `historial-carrefour.json`: abre Carrefour en Brave, espera a que toques el favorito "📥 Historial Carrefour" y toma la descarga. Doble clic. Ver "Pantalla 3 › El actualizador". |
 | `historial-carrefour.json` | **Tu historial de pedidos** de los últimos 12 meses, bajado desde tu cuenta de carrefour.com.ar. Lo lee la pestaña "Lo que compro". Son datos personales: no subirlo al hosting ni a git. Ver "Pantalla 3". |
+| `manifest.webmanifest` + `sw.js` + `iconos/` | Lo que hace a la página **instalable en Android** (ícono en la pantalla de inicio). Ver "Instalable en Android". |
 | `CARRITO_OFERTA_JULIO2026.txt` | Lista original de julio 2026. Referencia, no la lee el programa. |
 | `*.pdf` | Comprobantes sueltos, sin relación con esta herramienta. |
 
@@ -52,6 +53,8 @@ que la página. Por eso el problema de CORS desapareció por completo.
 | `GET /api/historial` | `historial-carrefour.json` agrupado por producto (`leer_historial()`). `{ok:false, falta:true}` si no está. |
 | `POST /api/habituales` | `{ids}` → estado de hoy de hasta 50 productos, **por productId** (`estado_por_ids()`). |
 | `POST /api/sesion` | `{parte, datos}` → guarda **una** parte (`"lista"`, `"ofertas"` o `"habituales"`) y deja la otra como estaba. Con `datos:null` la borra. |
+| `POST /api/sync-historial` | `{accion:"abrir"}` abre carrefour.com.ar en Brave y anota la hora; `{accion:"estado"}` importa la descarga del favorito si ya llegó (`{listo, agregados}`). Ver "Pantalla 3 › Historial antes de cada búsqueda". |
+| `GET /manifest.webmanifest`, `/sw.js`, `/iconos/*.png` | Archivos para instalar la página. Lista cerrada en `ESTATICOS`. |
 | `POST /api/salir` | Apaga el servidor. |
 
 ---
@@ -358,6 +361,25 @@ ultima-busqueda.json        ← el que ya escribe Python en la carpeta
 Nada más: ni Python, ni el `.bat`, ni `articulos.txt`. La página detecta sola que no hay
 servidor y entra en **modo lectura**.
 
+### Instalable en Android
+
+`manifest.webmanifest` (nombre, colores, `start_url: verificador-carrefour.html`, `display:
+standalone`), `sw.js` y los íconos de `iconos/` (carrito blanco con `%` sobre azul Carrefour;
+uno `maskable` con el dibujo dentro de la zona segura). Para que Chrome ofrezca **"Instalar
+app"** hace falta **https**: en el hosting, subir también esos archivos:
+
+```
+verificador-carrefour.html   ultima-busqueda.json
+manifest.webmanifest         sw.js          iconos/  (las 4 PNG)
+```
+
+- `sw.js` es **red primero, caché si no hay señal**: siempre muestra lo último que subiste y,
+  sin señal en el súper, abre con lo anterior. No toca `/api/` ni nada de otro dominio (fotos,
+  carrito). Guarda `ultima-busqueda.js?t=…` sin la marca, una sola copia.
+- Se registra sólo con `http(s)`; con doble clic (`file://`) no hay service worker.
+- Los PNG se generaron con un script de Python puro (sin Pillow). Si se cambia el dibujo,
+  hay que regenerar los cuatro.
+
 ### El archivo gemelo `ultima-busqueda.js` — y por qué existe
 
 **Con doble clic (`file://`) el navegador PROHÍBE leer el `.json` de al lado**, aunque
@@ -447,7 +469,7 @@ archivo al celular por mail o WhatsApp, suelto y sin el HTML al lado.
 
 ## Pantalla 3: "Lo que compro" (historial de la cuenta)
 
-Pestaña del medio y **la que se abre por defecto** (`vista("habituales")` al final del
+**Es la pantalla principal:** primera pestaña y **la que se abre por defecto** (`vista("habituales")` al final del
 arranque; en modo lectura sólo si el archivo trae compras). Muestra el estado de hoy de **los productos exactos que compraste** en
 los últimos 12 meses: en oferta, precio actual contra lo que pagaste la última vez, sin
 stock o "ya no está en la tienda".
@@ -530,6 +552,23 @@ pedidos cancelados.
 - Al abrir la pestaña se relee siempre el historial; si trae productos que nunca se
   consultaron, se consultan solos. "Actualizar precios" vuelve a consultar todo.
 
+### Historial antes de cada búsqueda
+
+**"Actualizar precios"** (y "Consultar de nuevo"), **"Verificar precios"** y **"Buscar ofertas"**
+**preguntan** (`confirm`) si se quiere actualizar el historial antes de buscar. Primero fue
+automático y el usuario se arrepintió: **no volver a hacerlo automático**. Con "Cancelar" se
+busca directo, sin tocar nada. Con "Aceptar", `actualizarHistorialPrimero()` muestra la ventana `#hbSync`, le pide a Python que abra
+carrefour.com.ar en Brave (`/api/sync-historial` `abrir`) y pregunta cada 1,5 s si llegó la
+descarga del favorito (`estado`, que usa `importar_descargas(inicio)`). Al terminar relee el
+historial con `cargarHistorial(true)` (sin la consulta automática) y sigue con la búsqueda.
+
+- Siempre se puede **"Seguir sin actualizar"**, y a los 3 minutos (`HB_SYNC_ESPERA`) sigue solo.
+- La promesa se cumple pase lo que pase: un error acá nunca frena la búsqueda.
+- Las funciones de verdad quedaron como `verificarYa()` / `buscarOfertasYa()`; `verificar()` y
+  `buscarOfertas()` sólo validan, sincronizan y las llaman.
+- La consulta automática al abrir la pestaña (productos nunca consultados) **no** pasa por acá.
+- En modo lectura no hace nada.
+
 ### Filtro de período
 
 El primer desplegable de la barra (`#hbPeriodo`): último mes, 3, **6 (por defecto)**, 12,
@@ -554,6 +593,11 @@ todo el historial, o "Elegir meses…", que muestra dos `<input type="month">`
   (`hbDiferencia()`: precio efectivo de hoy, con promo de varias unidades, contra
   `ultimoPrecio`). **Lo que se vende por peso (`multiplo ≠ 1`) no se compara**: el precio
   del pedido y el del catálogo no se miden igual.
+- **En oferta = tarjeta entera verde** (`.oc.hb-oferta`); si la oferta es sólo con Tarjeta
+  (selector prendido), amarilla (`.oc.hb-tarjeta`). Entra por el 5.º parámetro `clase` de
+  `tarjetaOferta()`.
+- **Compra reciente:** si la última compra (del período) fue hace `HB_RECIENTE = 10` días o menos,
+  la fecha va en verde (`.hb-reciente`, `hbDiasDesde()`).
 - Sin stock / ya no está / sin consultar: tarjeta gris `.oc.apagada` con los datos del historial.
 - Filtros en memoria: período (ver arriba), veces mínimas en ese período (por defecto **2 o más**), estado (oferta, más barato
   que la última vez, sin stock, ya no está), texto y orden (por defecto **nombre A-Z**). Se dibujan de a 100 con "Ver más".

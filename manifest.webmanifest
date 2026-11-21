@@ -1,0 +1,18 @@
+{
+  "name": "Precios y ofertas · Carrefour",
+  "short_name": "Ofertas Carrefour",
+  "description": "Lo que comprás en Carrefour: qué está en oferta hoy y a qué precio.",
+  "lang": "es-AR",
+  "id": "./verificador-carrefour.html",
+  "start_url": "./verificador-carrefour.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f5f9",
+  "theme_color": "#004E9F",
+  "icons": [
+    { "src": "iconos/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "iconos/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "iconos/icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

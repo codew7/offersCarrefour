@@ -6,6 +6,13 @@
 <meta name="theme-color" content="#004E9F">
 <meta name="color-scheme" content="light">
 <title>Precios y ofertas · Carrefour AR</title>
+<!-- Instalable en Android (y en iPhone con "Agregar a inicio"): ver sw.js -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="iconos/icono-192.png">
+<link rel="apple-touch-icon" href="iconos/icono-apple-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ofertas Carrefour">
 <style>
   :root{
     --azul:#004E9F; --azul-osc:#003b78; --azul-claro:#e8f0fa;
@@ -483,6 +490,28 @@
   .hb-dif.sube{background:#fdecec;color:var(--rojo)}
   .hb-of{align-self:flex-start;background:var(--verde);color:#fff;font-size:10px;
          font-weight:750;letter-spacing:.5px;padding:2px 8px;border-radius:999px}
+  /* EN OFERTA en "Lo que compro": la tarjeta entera en verde, para verla de
+     lejos entre cientos. Amarilla si la oferta es sólo con Tarjeta (y el
+     selector está prendido). Van después de .oc:hover: misma especificidad. */
+  .oc.hb-oferta{background:linear-gradient(135deg,#dcf5e8,#f4fcf8);
+                box-shadow:inset 0 0 0 2px var(--verde),var(--sombra)}
+  .oc.hb-oferta:hover{box-shadow:inset 0 0 0 2px var(--verde),var(--sombra-alta)}
+  .oc.hb-tarjeta{background:linear-gradient(135deg,#fff6d6,#fffdf5);
+                 box-shadow:inset 0 0 0 2px var(--amarillo),var(--sombra)}
+  .oc.hb-tarjeta:hover{box-shadow:inset 0 0 0 2px var(--amarillo),var(--sombra-alta)}
+  /* Última compra hace 10 días o menos */
+  .hb-reciente{color:var(--verde);font-weight:750;background:#e6f4ee;padding:0 5px;border-radius:5px}
+  /* Ventana "actualizando historial" antes de cada búsqueda */
+  .sync{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:190;
+        display:flex;align-items:center;justify-content:center;padding:16px}
+  .sync-caja{background:#fff;border-radius:16px;max-width:460px;width:100%;padding:22px 24px;
+             box-shadow:var(--sombra-alta);line-height:1.55;font-size:14.5px}
+  .sync-caja h3{margin:0 0 8px;font-size:17px;color:var(--azul)}
+  .sync-caja p{margin:0 0 12px}
+  .sync-esp{display:flex;align-items:center;gap:10px;color:var(--tenue);font-size:13px;margin-bottom:16px}
+  .sync-rueda{width:18px;height:18px;border-radius:50%;border:3px solid var(--azul-claro);
+              border-top-color:var(--azul);animation:girar 0.9s linear infinite;flex:none}
+  @keyframes girar{to{transform:rotate(360deg)}}
   .oc.apagada{opacity:.72}
   .oc.apagada .thumb{filter:grayscale(1)}
   .hb-estado{font-size:12.5px;font-weight:650;color:var(--tenue)}
@@ -701,8 +730,8 @@
 
     <div class="fila-tabs">
       <div class="tabs">
-        <button class="tab" id="tabLista">Mi lista</button>
         <button class="tab on" id="tabHabituales">Lo que compro</button>
+        <button class="tab" id="tabLista">Mi lista</button>
         <button class="tab" id="tabOfertas">Explorar ofertas</button>
       </div>
     </div>
@@ -1024,6 +1053,22 @@
     <span class="cc-larga">Enviar al carrito de Carrefour</span>
     <span class="cc-corta">Ir al carrito</span>
   </button>
+</div>
+
+<!-- Antes de cada búsqueda: traer los pedidos nuevos (ver actualizarHistorialPrimero). -->
+<div id="hbSync" class="sync oculto" role="dialog" aria-modal="true" aria-labelledby="hbSyncTit">
+  <div class="sync-caja">
+    <h3 id="hbSyncTit">Primero, tu historial de compras</h3>
+    <p>Se abrió <b>carrefour.com.ar</b> en Brave. Con tu sesión iniciada, tocá el favorito
+       <b>📥 Historial Carrefour</b> de la barra y volvé acá.</p>
+    <p class="hb-nota">¿Todavía no lo tenés en la barra? Arrastrá este botón hasta la barra de
+       favoritos de Brave (si no la ves: <b>Ctrl+Shift+B</b>):
+       <a class="hb-fav" id="hbFav2" href="#">📥 Historial Carrefour</a></p>
+    <div class="sync-esp"><span class="sync-rueda"></span><span id="hbSyncTxt">Esperando la descarga…</span></div>
+    <div class="acciones-panel">
+      <button class="btn-s" id="hbSyncSaltar">Seguir sin actualizar</button>
+    </div>
+  </div>
 </div>
 
 <!-- Imagen ampliada: se llena y se muestra al hacer click en cualquier miniatura. -->
@@ -2079,6 +2124,12 @@
 
   function buscarOfertas(){
     if(ofBuscando || soloLectura) return;
+    if(!catsAConsultar().length){ aviso("Marcá al menos una categoría."); return; }
+    actualizarHistorialPrimero().then(buscarOfertasYa);
+  }
+
+  function buscarOfertasYa(){
+    if(ofBuscando || soloLectura) return;
     var lista = catsAConsultar();
     if(!lista.length){ aviso("Marcá al menos una categoría."); return; }
 
@@ -2588,13 +2639,14 @@
 
   // extra: HTML opcional que va debajo del nombre ("Lo que compro" lo usa para
   // decir cuántas veces lo compraste y a cuánto). sinMedida: sin precio por kilo/litro.
-  function tarjetaOferta(p, mejores, extra, sinMedida){
+  // clase: clase extra para la tarjeta ("Lo que compro" pinta así las ofertas).
+  function tarjetaOferta(p, mejores, extra, sinMedida, clase){
     var soloTarj = soloPorTarjeta(p);
     var sub = subcategoria(p.cat);
     // El que más rinde de su subcategoría no lleva cartel: se pinta de amarillo
     // (.oc.mejor) y la explicación va en el title, para no sumarle otra línea.
     var pmMejor = mejores && mejores[p.id];
-    var h = '<div class="oc' + (pmMejor ? " mejor" : "") + '"'
+    var h = '<div class="oc' + (pmMejor ? " mejor" : "") + (clase ? " " + clase : "") + '"'
           + ' style="--franja:' + colorCat(sub) + '"'
           + (pmMejor ? ' title="Mejor precio por ' + pmMejor.uni.nombre + ' entre los «'
                 + esc(sub) + '» que estás viendo: ' + plata(pmMejor.valor)
@@ -2774,10 +2826,22 @@
     return filas;
   }
 
+  // Días desde una fecha ISO (YYYY-MM-DD) hasta hoy. Infinity si no hay fecha.
+  var HB_RECIENTE = 10;     // hasta cuántos días atrás la fecha va en verde
+  function hbDiasDesde(iso){
+    var t = String(iso || "").slice(0, 10).split("-");
+    if(t.length !== 3) return Infinity;
+    var hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    return Math.round((hoy - new Date(+t[0], t[1] - 1, +t[2])) / 864e5);
+  }
+
   function hbLineaHist(f){
     var h = f.h;
     var t = 'Lo compraste <b>' + h.veces + (h.veces === 1 ? ' vez' : ' veces') + '</b>'
-          + ' · la última el ' + esc(fechaCorta(h.ultima))
+          + ' · la última el ' + (hbDiasDesde(h.ultima) <= HB_RECIENTE
+              ? '<span class="hb-reciente" title="La compraste hace ' + HB_RECIENTE + ' días o menos">'
+                + esc(fechaCorta(h.ultima)) + '</span>'
+              : esc(fechaCorta(h.ultima)))
           + (h.ultimoPrecio ? ' a <b>' + plata(h.ultimoPrecio) + '</b>' : '');
     if(f.dif !== null && f.dif !== 0){
       t += ' <span class="hb-dif ' + (f.dif < 0 ? 'baja' : 'sube') + '" title="Precio de hoy contra lo que pagaste la última vez">'
@@ -2791,9 +2855,11 @@
   function tarjetaHabitual(f){
     var p = f.p;
     if(p && p.disponible && p.precio){
-      var extra = hbLineaHist(f)
-                + (esOferta(p) && !soloPorTarjeta(p) ? '<span class="hb-of">EN OFERTA</span>' : '');
-      return tarjetaOferta(p, null, extra, true);
+      var real = esOferta(p) && !soloPorTarjeta(p);
+      var extra = hbLineaHist(f) + (real ? '<span class="hb-of">EN OFERTA</span>' : '');
+      // Verde si está en oferta; amarilla si la oferta es sólo con Tarjeta.
+      return tarjetaOferta(p, null, extra, true,
+                           real ? "hb-oferta" : esOferta(p) ? "hb-tarjeta" : "");
     }
     // Sin stock, ya no está, o todavía sin consultar: se muestra lo del historial.
     var h = f.h;
@@ -2870,7 +2936,9 @@
   }
 
   // Lee historial-carrefour.json (vía Python). Si no está, explica cómo bajarlo.
-  function cargarHistorial(){
+  // sinConsultar: sólo lee; no dispara la consulta de los productos nuevos
+  // (lo usa "Actualizar precios", que después consulta todo).
+  function cargarHistorial(sinConsultar){
     if(soloLectura) return Promise.resolve();
     return api("/api/historial").then(function(d){
       if(!d.ok){
@@ -2888,8 +2956,81 @@
       pintarHabituales();
       // Productos que no se consultaron nunca (historial nuevo): se consultan solos.
       var faltan = d.items.some(function(h){ return !(h.id in hb.estado); });
-      if(faltan) consultarHabituales();
+      if(faltan && !sinConsultar) consultarHabituales();
     }, function(e){ aviso("No se pudo leer el historial: " + e.message); });
+  }
+
+  // ------------------------------------------------------------------
+  // ANTES de cada búsqueda o actualización de precios: traer los pedidos
+  // nuevos de tu cuenta. Python abre carrefour.com.ar en Brave, vos tocás el
+  // favorito "📥 Historial Carrefour" y acá se espera a que llegue la descarga
+  // (/api/sync-historial). Siempre se puede seguir sin actualizar.
+  // La promesa se cumple pase lo que pase: la búsqueda sigue igual.
+  // ------------------------------------------------------------------
+  var HB_SYNC_ESPERA = 3 * 60 * 1000;    // después de esto se sigue solo
+  var hbSyncEnCurso = null;
+
+  function actualizarHistorialPrimero(){
+    if(soloLectura) return Promise.resolve();
+    if(hbSyncEnCurso) return hbSyncEnCurso;
+    // No es automático: se pregunta cada vez (lo pidió el usuario).
+    if(!confirm("¿Actualizar primero tu historial de compras?\n\n"
+              + "Aceptar: se abre Carrefour en Brave para que toques el favorito «📥 Historial Carrefour».\n"
+              + "Cancelar: se busca directamente con el historial que ya tenés.")){
+      return Promise.resolve();
+    }
+    hbSyncEnCurso = new Promise(function(listo){
+      var caja = $("hbSync"), terminado = false, timer = null;
+      var arranque = Date.now();
+      $("hbSyncTxt").textContent = "Esperando la descarga…";
+      caja.classList.remove("oculto");
+
+      function fin(msj){
+        if(terminado) return;
+        terminado = true;
+        clearTimeout(timer);
+        caja.classList.add("oculto");
+        hbSyncEnCurso = null;
+        if(msj) aviso(msj);
+        // Se relee el historial (fechas y pedidos nuevos) sin consultar precios:
+        // lo que viene después ya consulta lo que haga falta.
+        cargarHistorial(true).then(function(){ listo(); }, function(){ listo(); });
+      }
+      $("hbSyncSaltar").onclick = function(){ fin("Se siguió sin actualizar el historial."); };
+
+      function mirar(){
+        if(terminado) return;
+        if(Date.now() - arranque > HB_SYNC_ESPERA){
+          fin("No llegó la descarga del historial: se siguió con el que había.");
+          return;
+        }
+        api("/api/sync-historial", { accion:"estado" }).then(function(d){
+          if(terminado) return;
+          if(d.ok && d.listo){
+            fin(d.agregados == null ? "Historial actualizado."
+              : d.agregados ? "Historial actualizado: " + d.agregados + " pedido"
+                  + (d.agregados === 1 ? "" : "s") + " nuevo" + (d.agregados === 1 ? "" : "s") + "."
+              : "Historial al día: no hay pedidos nuevos.");
+            return;
+          }
+          var seg = Math.round((Date.now() - arranque) / 1000);
+          $("hbSyncTxt").textContent = "Esperando la descarga… " + seg + " s";
+          timer = setTimeout(mirar, 1500);
+        }, function(){ if(!terminado) timer = setTimeout(mirar, 2500); });
+      }
+
+      api("/api/sync-historial", { accion:"abrir" }).then(function(d){
+        if(!d.ok){ fin("No se pudo abrir Carrefour para actualizar el historial: " + (d.error || "")); return; }
+        timer = setTimeout(mirar, 1500);
+      }, function(){ fin("No se pudo actualizar el historial: se siguió con el que había."); });
+    });
+    return hbSyncEnCurso;
+  }
+
+  // "Actualizar precios" de Lo que compro: historial primero, después todo.
+  function actualizarPreciosHabituales(){
+    if(soloLectura || hb.cargando) return;
+    actualizarHistorialPrimero().then(function(){ consultarHabituales(); });
   }
 
   function consultarHabituales(){
@@ -3180,7 +3321,13 @@
 
   // ---------- Proceso ----------
   function verificar(){
-    if(soloLectura) return;   // sin servidor no hay a quién preguntarle
+    if(soloLectura || $("btnGo").disabled) return;
+    if(!leerLista().length){ aviso("La lista está vacía."); plegar(true); $("lista").focus(); return; }
+    actualizarHistorialPrimero().then(verificarYa);
+  }
+
+  function verificarYa(){
+    if(soloLectura || $("btnGo").disabled) return;   // sin servidor, o ya está buscando
     var lineas = leerLista();
     if(!lineas.length){ aviso("La lista está vacía."); plegar(true); $("lista").focus(); return; }
 
@@ -3417,17 +3564,20 @@
   $("hbEstado").onchange = refiltrarHabituales;
   $("hbOrden").onchange  = refiltrarHabituales;
   $("hbBtnMas").onclick  = function(){ hb.limite += 100; pintarHabituales(); };
-  $("hbConsultar").onclick = function(){ consultarHabituales(); };
+  $("hbConsultar").onclick = actualizarPreciosHabituales;
   $("hbBtnAyuda").onclick  = function(){ $("hbAyuda").classList.toggle("oculto"); };
   $("hbLeer").onclick      = function(){ cargarHistorial(); };
   // El favorito es el mismo código de "Copiar código", en una línea y como
   // link javascript:. Se arrastra a la barra; acá tocarlo no hace nada.
-  $("hbFav").href = "javascript:" + encodeURIComponent(
-    $("hbCodigo").textContent.trim().split("\n").map(function(l){ return l.trim(); }).join(" "));
-  $("hbFav").onclick = function(){
-    aviso("Ese botón no se toca acá: arrastralo a la barra de favoritos de Brave.");
-    return false;
-  };
+  // Hay dos copias: en la ayuda (#hbFav) y en la ventana de "Primero, tu historial" (#hbFav2).
+  ["hbFav", "hbFav2"].forEach(function(id){
+    $(id).href = "javascript:" + encodeURIComponent(
+      $("hbCodigo").textContent.trim().split("\n").map(function(l){ return l.trim(); }).join(" "));
+    $(id).onclick = function(){
+      aviso("Ese botón no se toca acá: arrastralo a la barra de favoritos de Brave.");
+      return false;
+    };
+  });
   $("hbCopiar").onclick    = function(){
     var b = $("hbCopiar"), txt = $("hbCodigo").textContent;
     var hecho = function(){ b.textContent = "✓ Copiado"; setTimeout(function(){ b.textContent = "Copiar código"; }, 2500); };
@@ -3440,7 +3590,7 @@
       document.body.removeChild(t);
     }
   };
-  $("hbAvisoGuardado").querySelector(".g-nuevo").onclick = function(){ consultarHabituales(); };
+  $("hbAvisoGuardado").querySelector(".g-nuevo").onclick = actualizarPreciosHabituales;
   $("hbAvisoGuardado").querySelector(".g-borrar").onclick = function(){
     hb.estado = {};
     hb.consultado = "";
@@ -3545,6 +3695,12 @@
   // barra flotante aparece sola con lo que habias elegido antes de refrescar.
   leerCarritoLocal();
   pintarBarra();
+
+  // ---------- Instalable (Android) ----------
+  // Con file:// no hay service worker; en el hosting (https) o en 127.0.0.1 sí.
+  if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+    navigator.serviceWorker.register("sw.js").catch(function(){ /* sin instalar, anda igual */ });
+  }
 
   // ---------- Arranque de verdad ----------
   // Si no contesta /api/ping no hay Python detrás: o abriste el HTML con doble
