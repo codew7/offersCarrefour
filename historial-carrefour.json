@@ -1,6 +1,500 @@
 {
- "exportado": "2026-11-15T20:10:17.892Z",
+ "exportado": "2026-11-22T00:29:50.148Z",
  "pedidos": [
+  {
+   "pedido": "1677979737987-01",
+   "fecha": "2026-11-21T21:22:11.9813166+00:00",
+   "estado": "payment-approved",
+   "items": [
+    {
+     "sku": "293484",
+     "productId": "778764",
+     "refId": "7794000009554",
+     "nombre": "Risotto Calabaza Knorr 200 grs",
+     "cantidad": 1,
+     "precio": 3584.25,
+     "url": "/risotto-calabaza-knorr-200-grs-778764/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/906182-200-200/7794000009554_E02.jpg?v=639203454392500000"
+    },
+    {
+     "sku": "95916",
+     "productId": "699549",
+     "refId": "7790580131357",
+     "nombre": "Atún en aceite La campagnola lomitos 170 g.",
+     "cantidad": 1,
+     "precio": 5236,
+     "url": "/atun-en-aceite-la-campagnola-lomitos-170-g-699549-699549/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/381309-200-200/7790580131357_E01.jpg?v=638315050509500000"
+    },
+    {
+     "sku": "40198",
+     "productId": "640164",
+     "refId": "7790236018353",
+     "nombre": "Tapa para empanada criolla La Salteña x 22 uni",
+     "cantidad": 1,
+     "precio": 3386.25,
+     "url": "/tapa-para-empanada-criolla-la-saltena-x-22-uni/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/836803-200-200/7790236018353_01.jpg.jpg?v=639104980473130000"
+    },
+    {
+     "sku": "9490",
+     "productId": "644673",
+     "refId": "7798338290028",
+     "nombre": "Leche entera larga vida Las tres niñas 1 l.",
+     "cantidad": 6,
+     "precio": 2234.25,
+     "url": "/leche-entera-larga-vida-las-tres-ninas-1-l/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/904058-200-200/7798338290028_01.jpg?v=639198320026670000"
+    },
+    {
+     "sku": "284791",
+     "productId": "776809",
+     "refId": "7793890262360",
+     "nombre": "Wraps Rapiditas Clásicas 470 grs",
+     "cantidad": 1,
+     "precio": 5729.25,
+     "url": "/wraps-rapiditas-clasicas-470-grs-776809/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/916730-200-200/7793890262360_01.jpg?v=639228318182300000"
+    },
+    {
+     "sku": "280582",
+     "productId": "775840",
+     "refId": "7790070103918",
+     "nombre": "Relleno para fajitas Granja del Sol pollo y vegetales 500 grs",
+     "cantidad": 2,
+     "precio": 7149.35,
+     "url": "/relleno-para-fajitas-granja-del-sol-pollo-y-vegetales-500-grs-775840/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/826708-200-200/7790070103918_E01.jpg?v=639087686390670000"
+    },
+    {
+     "sku": "278264",
+     "productId": "774676",
+     "refId": "7791337010260",
+     "nombre": "Yogur Cremoso Entero Frutilla La Serenísima Nutrición Activa 120 grs",
+     "cantidad": 4,
+     "precio": 1086.75,
+     "url": "/yogur-cremoso-entero-frutilla-la-serenisima-nutricion-activa-120-grs-774676/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/849310-200-200/7791337010260_01.jpg?v=639119600506400000"
+    },
+    {
+     "sku": "276584",
+     "productId": "772811",
+     "refId": "7791337010727",
+     "nombre": "Yogur cremoso sabor natural La Serenísima Nutrición Activa 120 grs",
+     "cantidad": 4,
+     "precio": 1086.75,
+     "url": "/yogur-cremoso-sabor-natural-la-serenisima-nutricion-activa-120-grs-772811/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/996276-200-200/7791337010727_01.jpg?v=639307857422730000"
+    },
+    {
+     "sku": "217436",
+     "productId": "749200",
+     "refId": "7791720033036",
+     "nombre": "Pan lacteado de mesa Carrefour Classic 590 grs",
+     "cantidad": 1,
+     "precio": 3841.15,
+     "url": "/pan-lacteado-de-mesa-carrefour-classic-590-grs-749200/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/913119-200-200/7791720033036_E02.jpg?v=639221361052400000"
+    },
+    {
+     "sku": "184446",
+     "productId": "737921",
+     "refId": "7790580138868",
+     "nombre": "Puré de tomate La Campagnola tetra 530 g.",
+     "cantidad": 2,
+     "precio": 891.65,
+     "url": "/pure-de-tomate-la-campagnola-tetra-530-g-737921/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/894795-200-200/7790580138868_02.jpg?v=639179297708930000"
+    },
+    {
+     "sku": "171120",
+     "productId": "731388",
+     "refId": "7790070036513",
+     "nombre": "Bastoncitos de merluza Granja del Sol 300 g.",
+     "cantidad": 1,
+     "precio": 4059.3,
+     "url": "/bastoncitos-de-merluza-granja-del-sol-300-g-731388/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/914068-200-200/7790070036513_01.jpg?v=639222246455770000"
+    },
+    {
+     "sku": "171119",
+     "productId": "731387",
+     "refId": "7790070036506",
+     "nombre": "Filet de merluza rebozado Granja del Sol 500 g.",
+     "cantidad": 1,
+     "precio": 9694.3,
+     "url": "/filet-de-merluza-rebozado-granja-del-sol-500-g-731387/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/914090-200-200/7790070036506_01.jpg?v=639222250081030000"
+    },
+    {
+     "sku": "169905",
+     "productId": "731392",
+     "refId": "7791720030042",
+     "nombre": "Porotos de soja Carrefour classic seca remojada 300 g.",
+     "cantidad": 1,
+     "precio": 1011.5,
+     "url": "/porotos-de-soja-carrefour-classic-seca-remojada-300-g-731392/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/537473-200-200/7791720030042_01.jpg?v=638549445835900000"
+    },
+    {
+     "sku": "169638",
+     "productId": "730997",
+     "refId": "7790070432261",
+     "nombre": "Arroz preparado Gallo queso dp 240 g.",
+     "cantidad": 2,
+     "precio": 2144.35,
+     "url": "/arroz-preparado-gallo-queso-dp-240-g-730997/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/906145-200-200/7790070432261_E01.jpg?v=639203438596770000"
+    },
+    {
+     "sku": "15988",
+     "productId": "604852",
+     "refId": "7790670050957",
+     "nombre": "Milanesa de carne Paty 2 u.",
+     "cantidad": 2,
+     "precio": 3339.65,
+     "url": "/milanesa-de-carne-paty-2-u/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/971632-200-200/7790670050957_E02.jpg?v=639286167267300000"
+    },
+    {
+     "sku": "157292",
+     "productId": "726376",
+     "refId": "7791337061422",
+     "nombre": "Queso blanco original La SerenÍsima Clásico 290 grs",
+     "cantidad": 2,
+     "precio": 3351.75,
+     "url": "/queso-blanco-original-la-serenisima-clasico-290-grs-726376/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/978406-200-200/7791337061422_E01.jpg?v=639289638922700000"
+    },
+    {
+     "sku": "155570",
+     "productId": "724920",
+     "refId": "7797906054833",
+     "nombre": "Papas crinkle Mc cain en bolsa 600 g.",
+     "cantidad": 2,
+     "precio": 6277.5,
+     "url": "/papas-crinkle-mc-cain-en-bolsa-600-g-724920/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/845818-200-200/7797906054833_01.jpg?v=639111876190570000"
+    },
+    {
+     "sku": "15466",
+     "productId": "468512",
+     "refId": "7798141718221",
+     "nombre": "Rollo de cocina Carrefour Essential x3 50 paños",
+     "cantidad": 2,
+     "precio": 2031.5,
+     "url": "/rollo-de-cocina-carrefour-essential-x3-50-panos-468512/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/599023-200-200/7798141718221_01.jpg?v=638685086676400000"
+    },
+    {
+     "sku": "143285",
+     "productId": "720313",
+     "refId": "7798338291070",
+     "nombre": "Crema de leche Las tres niñas uat para cocinar 200 cc.",
+     "cantidad": 2,
+     "precio": 2080,
+     "url": "/crema-de-leche-las-tres-ninas-uat-para-cocinar-200-cc-720313/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/935357-200-200/7798338291070_01.jpg?v=639252560596900000"
+    },
+    {
+     "sku": "141593",
+     "productId": "719361",
+     "refId": "8445290559975",
+     "nombre": "Nesquik Original Cacao en Polvo Menos azúcar 300 grs",
+     "cantidad": 1,
+     "precio": 5837.3,
+     "url": "/nesquik-original-cacao-en-polvo-menos-azucar-300-grs-719361/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/854311-200-200/8445290559975_01.jpg?v=639122877063330000"
+    },
+    {
+     "sku": "13639",
+     "productId": "659095",
+     "refId": "2505587000002",
+     "nombre": "Queso cremoso Puyehue horma x kg.",
+     "cantidad": 3,
+     "precio": 1513,
+     "url": "/queso-cremoso-puyehue-horma-x-kg/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/843182-200-200/2505587000002_E02.jpg?v=639106468339500000"
+    },
+    {
+     "sku": "131075",
+     "productId": "717208",
+     "refId": "7790070034410",
+     "nombre": "Nugget de pollo Granja del sol 400 g.",
+     "cantidad": 1,
+     "precio": 8583.75,
+     "url": "/nugget-de-pollo-granja-del-sol-400-g-717208/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/685583-200-200/7790070034410_E01.jpg?v=638895638848500000"
+    },
+    {
+     "sku": "126923",
+     "productId": "716476",
+     "refId": "7790070036131",
+     "nombre": "Medallón de pollo Granja del sol 4 uni",
+     "cantidad": 1,
+     "precio": 6299.25,
+     "url": "/medallon-de-pollo-granja-del-sol-4-uni-716476/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/861194-200-200/7790070036131_E01.jpg?v=639130044597900000"
+    },
+    {
+     "sku": "169902",
+     "productId": "731418",
+     "refId": "7790070622037",
+     "nombre": "Tapa para pascualina La salteña criolla 2 uni",
+     "cantidad": 2,
+     "precio": 2211.75,
+     "url": "/tapa-para-pascualina-la-saltena-criolla-2-uni-731418/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/938829-200-200/7790070622037_01.jpg?v=639257817482370000"
+    }
+   ]
+  },
+  {
+   "pedido": "1676539700115-01",
+   "fecha": "2026-11-15T21:14:09.8918678+00:00",
+   "estado": "invoiced",
+   "items": [
+    {
+     "sku": "276582",
+     "productId": "772809",
+     "refId": "7791337010505",
+     "nombre": "Yogur sachet entero sabor vainilla La Serenísima Nutrición Activa 1300 grs",
+     "cantidad": 1,
+     "precio": 5859,
+     "url": "/yogur-sachet-entero-sabor-vainilla-la-serenisima-nutricion-activa-1300-grs-772809/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/970129-200-200/7791337010505_E01.jpg?v=639282717221970000"
+    },
+    {
+     "sku": "6628",
+     "productId": "633589",
+     "refId": "7791720017852",
+     "nombre": "Puré de papas y zapallo instantáneo Carrefour classic 100 g.",
+     "cantidad": 1,
+     "precio": 2137.5,
+     "url": "/pure-de-papas-y-zapallo-instantaneo-carrefour-classic-100-g/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/386921-200-200/7791720017852_01.jpg?v=638872484107370000"
+    },
+    {
+     "sku": "48877",
+     "productId": "678861",
+     "refId": "7790742625106",
+     "nombre": "Dulce de leche La Serenísima colonial 250 g.",
+     "cantidad": 2,
+     "precio": 2456.25,
+     "url": "/dulce-de-leche-la-serenisima-colonial-250-g-678861/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/945336-200-200/7790742625106_E01.jpg?v=639269974279230000"
+    },
+    {
+     "sku": "9490",
+     "productId": "644673",
+     "refId": "7798338290028",
+     "nombre": "Leche entera larga vida Las tres niñas 1 l.",
+     "cantidad": 6,
+     "precio": 2234.25,
+     "url": "/leche-entera-larga-vida-las-tres-ninas-1-l/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/904058-200-200/7798338290028_01.jpg?v=639198320026670000"
+    },
+    {
+     "sku": "187807",
+     "productId": "739293",
+     "refId": "7791720030592",
+     "nombre": "Enjuague bucal de menta Carrefour Soft en botella 250 cc.",
+     "cantidad": 1,
+     "precio": 4038.8,
+     "url": "/enjuague-bucal-de-menta-carrefour-soft-en-botella-250-cc-739293/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/537477-200-200/7791720030592_01.jpg?v=638549447418430000"
+    },
+    {
+     "sku": "293484",
+     "productId": "778764",
+     "refId": "7794000009554",
+     "nombre": "Risotto Calabaza Knorr 200 grs",
+     "cantidad": 1,
+     "precio": 3584.25,
+     "url": "/risotto-calabaza-knorr-200-grs-778764/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/906182-200-200/7794000009554_E02.jpg?v=639203454392500000"
+    },
+    {
+     "sku": "217436",
+     "productId": "749200",
+     "refId": "7791720033036",
+     "nombre": "Pan lacteado de mesa Carrefour Classic 590 grs",
+     "cantidad": 1,
+     "precio": 4519,
+     "url": "/pan-lacteado-de-mesa-carrefour-classic-590-grs-749200/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/913119-200-200/7791720033036_E02.jpg?v=639221361052400000"
+    },
+    {
+     "sku": "252357",
+     "productId": "766582",
+     "refId": "7793890261912",
+     "nombre": "Madalena Bimbo vainilla 240 grs",
+     "cantidad": 1,
+     "precio": 2690.35,
+     "url": "/madalena-bimbo-vainilla-240-grs-766582/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/827881-200-200/7793890261912_E01.jpg?v=639089205021270000"
+    },
+    {
+     "sku": "201116",
+     "productId": "744864",
+     "refId": "7791720038093",
+     "nombre": "Aceitunas verdes en rodajas Carrefour Classic 150 grs",
+     "cantidad": 1,
+     "precio": 1992.9,
+     "url": "/aceitunas-verdes-en-rodajas-carrefour-classic-150-grs-744864/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/574637-200-200/7791720038093_E01.jpg?v=638636626797100000"
+    },
+    {
+     "sku": "265650",
+     "productId": "768035",
+     "refId": "7622202293733",
+     "nombre": "Galletitas original Club Social x6 24 grs",
+     "cantidad": 3,
+     "precio": 1950,
+     "url": "/galletitas-original-club-social-x6-24-grs-768035/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/905784-200-200/7622202293733_E02.jpg?v=639202579520700000"
+    },
+    {
+     "sku": "21022",
+     "productId": "649977",
+     "refId": "614143298486",
+     "nombre": "Queso mozzarella Silvia cilindro 250 g.",
+     "cantidad": 2,
+     "precio": 3565.25,
+     "url": "/queso-mozzarella-silvia-cilindro-250-g-649977/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/842186-200-200/614143298486_02.jpg?v=639105590479500000"
+    },
+    {
+     "sku": "220193",
+     "productId": "753541",
+     "refId": "7790990003787",
+     "nombre": "Detergente Magistral Ultra de limón Doy Pack 450 ml",
+     "cantidad": 2,
+     "precio": 3060.85,
+     "url": "/detergente-magistral-ultra-de-limon-doy-pack-450-ml-753541/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/776075-200-200/7790990003787_01.jpg?v=639004775780670000"
+    },
+    {
+     "sku": "287012",
+     "productId": "777681",
+     "refId": "7622202839962",
+     "nombre": "Galletitas surtidas Terrabusi Variedad 390 grs",
+     "cantidad": 2,
+     "precio": 3119.25,
+     "url": "/galletitas-surtidas-terrabusi-variedad-390-grs-777681/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/860611-200-200/7622202839962_E02.jpg?v=639129000020770000"
+    },
+    {
+     "sku": "19862",
+     "productId": "646568",
+     "refId": "2505266000002",
+     "nombre": "Queso cremoso Cremac x kg.",
+     "cantidad": 2,
+     "precio": 2225,
+     "url": "/queso-cremoso-cremac-x-kg-646568/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/883986-200-200/2505266000002_02.jpg?v=639159142839870000"
+    },
+    {
+     "sku": "170788",
+     "productId": "730831",
+     "refId": "7791720029442",
+     "nombre": "Jabón líquido Carrefour Soft de mora y lirios dp 300 cc.",
+     "cantidad": 2,
+     "precio": 1943.7,
+     "url": "/jabon-liquido-carrefour-classic-de-mora-y-lirio-dp-300-cc-730831/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/537460-200-200/7791720029442_01.jpg?v=638549441492200000"
+    },
+    {
+     "sku": "171120",
+     "productId": "731388",
+     "refId": "7790070036513",
+     "nombre": "Bastoncitos de merluza Granja del Sol 300 g.",
+     "cantidad": 1,
+     "precio": 4790,
+     "url": "/bastoncitos-de-merluza-granja-del-sol-300-g-731388/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/914068-200-200/7790070036513_01.jpg?v=639222246455770000"
+    },
+    {
+     "sku": "164625",
+     "productId": "729423",
+     "refId": "8445290993021",
+     "nombre": "Puré de Papas Original 125 grs",
+     "cantidad": 3,
+     "precio": 2190.3,
+     "url": "/pure-de-papas-original-125-grs-729423/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/904607-200-200/8445290993021_01.jpg?v=639201507205030000"
+    },
+    {
+     "sku": "169249",
+     "productId": "730467",
+     "refId": "7790787960378",
+     "nombre": "Yogur p desc Ilolay cremoso vainilla 120 g.",
+     "cantidad": 4,
+     "precio": 809.25,
+     "url": "/yogur-p-desc-ilolay-cremoso-vainilla-120-g-730467/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/687909-200-200/7790787960378_E02.jpg?v=638901819131230000"
+    },
+    {
+     "sku": "13715",
+     "productId": "653796",
+     "refId": "7790742141606",
+     "nombre": "Crema de leche La Serenísima para cocinar 200 cc.",
+     "cantidad": 1,
+     "precio": 2628.75,
+     "url": "/crema-de-leche-la-serenisima-para-cocinar-200-cc/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/174252-200-200/7790742141606_01_nuevopack.jpg?v=637468559863070000"
+    },
+    {
+     "sku": "166072",
+     "productId": "729711",
+     "refId": "7790670052401",
+     "nombre": "Salchichas Vienissima flow pack 6 uni",
+     "cantidad": 2,
+     "precio": 2452.5,
+     "url": "/salchichas-vienissima-flow-pack-6-uni_729711/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/844708-200-200/7790670052401_01.jpg?v=639110891185730000"
+    },
+    {
+     "sku": "10077",
+     "productId": "40482",
+     "refId": "7790040008175",
+     "nombre": "Obleas Opera clásicas x4 220 grs",
+     "cantidad": 2,
+     "precio": 1927.25,
+     "url": "/obleas-opera-clasicas-x4-220-grs-40482/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/318889-200-200/7790040008175_E01.jpg?v=639135170658700000"
+    },
+    {
+     "sku": "15960",
+     "productId": "154789",
+     "refId": "7798033336410",
+     "nombre": "Galletitas pepas Carrefour classic 300 g.",
+     "cantidad": 2,
+     "precio": 1865.5,
+     "url": "/galletitas-pepas-carrefour-classic-300-g/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/887422-200-200/7798033336410_E03.jpg?v=639235205186000000"
+    },
+    {
+     "sku": "15466",
+     "productId": "468512",
+     "refId": "7798141718221",
+     "nombre": "Rollo de cocina Carrefour Essential x3 50 paños",
+     "cantidad": 3,
+     "precio": 1901.9,
+     "url": "/rollo-de-cocina-carrefour-essential-x3-50-panos-468512/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/599023-200-200/7798141718221_01.jpg?v=638685086676400000"
+    },
+    {
+     "sku": "140555",
+     "productId": "718787",
+     "refId": "7790070431417",
+     "nombre": "Arroz parboil Gallo oro en bolsa 1 kg.",
+     "cantidad": 2,
+     "precio": 2234.25,
+     "url": "/arroz-parboil-gallo-oro-en-bolsa-1-kg-718787/p",
+     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/914063-200-200/7790070431417_01.jpg?v=639222245608070000"
+    }
+   ]
+  },
   {
    "pedido": "1673899645368-01",
    "fecha": "2026-11-04T21:23:06.2980901+00:00",
@@ -10145,243 +10639,6 @@
      "precio": 1299,
      "url": "/azucar-ledesma-molida-superior-bolsa-1-kg/p",
      "img": "https://carrefourar.vteximg.com.br/arquivos/ids/237222-55-55/7792540250450_02.jpg?v=637822592388930000"
-    }
-   ]
-  },
-  {
-   "pedido": "1577537775452-01",
-   "fecha": "2025-11-20T00:49:38.9040337+00:00",
-   "estado": "invoiced",
-   "items": [
-    {
-     "sku": "95916",
-     "productId": "699549",
-     "refId": "7790580131357",
-     "nombre": "Atún en aceite La campagnola lomitos 170 g.",
-     "cantidad": 3,
-     "precio": 3787.5,
-     "url": "/atun-en-aceite-la-campagnola-lomitos-170-g-699549-699549/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/381309-55-55/7790580131357_E01.jpg?v=638315050509500000"
-    },
-    {
-     "sku": "95673",
-     "productId": "699550",
-     "refId": "7790580131364",
-     "nombre": "Atún al natural La Campagnola lomitos 170 g.",
-     "cantidad": 3,
-     "precio": 3787.5,
-     "url": "/atun-al-natural-la-campagnola-lomitos-170-g-699550-699550/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/381234-55-55/7790580131364_E01.jpg?v=638315050206600000"
-    },
-    {
-     "sku": "26340",
-     "productId": "486999",
-     "refId": "7790380037705",
-     "nombre": "Garrapiñada de Maní Georgalos 80 g.",
-     "cantidad": 2,
-     "precio": 1034.25,
-     "url": "/garrapinada-de-mani-georgalos-80-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/179391-55-55/7790380037705_02.jpg?v=637468582143100000"
-    },
-    {
-     "sku": "157413",
-     "productId": "726555",
-     "refId": "7793281493526",
-     "nombre": "Hamburguesa de carne mediana Unión Ganadera 4 uni",
-     "cantidad": 2,
-     "precio": 4926.75,
-     "url": "/hamburguesa-de-carne-mediana-union-ganadera-4-uni-726555/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/373394-55-55/7793281493526_E02.jpg?v=638306741503600000"
-    },
-    {
-     "sku": "97379",
-     "productId": "700206",
-     "refId": "7794000006188",
-     "nombre": "Ketchup Hellmanns regular doypack 250 g.",
-     "cantidad": 1,
-     "precio": 1604.25,
-     "url": "/ketchup-hellmanns-regular-doypack-250-g-700206/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/315042-55-55/7794000006188_E01.jpg?v=638822454363800000"
-    },
-    {
-     "sku": "4674",
-     "productId": "609814",
-     "refId": "7798183630130",
-     "nombre": "Milanesa de cerdo premium Holis 500 g.",
-     "cantidad": 1,
-     "precio": 5600,
-     "url": "/milanesa-de-cerdo-premium-holis-500-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/270337-55-55/7798183630130_02.jpg?v=638084533951770000"
-    },
-    {
-     "sku": "4175",
-     "productId": "609816",
-     "refId": "7798183630017",
-     "nombre": "Milanesa de nalga premium Holis carne vacuna 500 g.",
-     "cantidad": 3,
-     "precio": 7120,
-     "url": "/milanesa-de-nalga-premium-holis-carne-vacuna-500-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/270334-55-55/7798183630017_02.jpg?v=638084531559000000"
-    },
-    {
-     "sku": "4219",
-     "productId": "609805",
-     "refId": "7798183630093",
-     "nombre": "Milanesa de pechuga de pollo Holis 500 g.",
-     "cantidad": 2,
-     "precio": 5680,
-     "url": "/milanesa-de-pechuga-de-pollo-holis-500-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/270336-55-55/7798183630093_02.jpg?v=638084533171530000"
-    },
-    {
-     "sku": "155570",
-     "productId": "724920",
-     "refId": "7797906054833",
-     "nombre": "Papas crinkle Mc cain en bolsa 600 g.",
-     "cantidad": 2,
-     "precio": 4159.35,
-     "url": "/papas-crinkle-mc-cain-en-bolsa-600-g-724920/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/448139-55-55/7797906054833_01.jpg?v=638404899313700000"
-    },
-    {
-     "sku": "157292",
-     "productId": "726376",
-     "refId": "7791337061422",
-     "nombre": "Queso blanco original La SerenÍsima clásico 290 grs",
-     "cantidad": 2,
-     "precio": 2153.4,
-     "url": "/queso-blanco-original-la-serenisima-clasico-290-grs-726376/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/596100-55-55/7791337061422_E01.jpg?v=638669402972900000"
-    },
-    {
-     "sku": "21022",
-     "productId": "649977",
-     "refId": "614143298486",
-     "nombre": "Queso mozzarella Silvia cilindro 250 g.",
-     "cantidad": 3,
-     "precio": 3266.25,
-     "url": "/queso-mozzarella-silvia-cilindro-250-g-649977/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/547618-55-55/614143298486_E02.jpg?v=638592380690970000"
-    },
-    {
-     "sku": "142219",
-     "productId": "719963",
-     "refId": "7791337007376",
-     "nombre": "Yogur batido durazno La Serenísima clásico 120 grs",
-     "cantidad": 4,
-     "precio": 624,
-     "url": "/yogur-batido-durazno-la-serenisima-clasico-120-grs-719963/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/382118-55-55/7791337007376_E01.jpg?v=638315205854970000"
-    },
-    {
-     "sku": "142218",
-     "productId": "719962",
-     "refId": "7791337007369",
-     "nombre": "Yogur batido frutilla La Serenísima clásico 120 g.",
-     "cantidad": 4,
-     "precio": 624,
-     "url": "/yogur-batido-frutilla-la-serenisima-clasico-120-g-719962/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/382142-55-55/7791337007369_E01.jpg?v=638315205947700000"
-    },
-    {
-     "sku": "172340",
-     "productId": "734602",
-     "refId": "7791337008632",
-     "nombre": "Yogur bebible frutilla La Serenísima clásico 1100 grs",
-     "cantidad": 2,
-     "precio": 2441.4,
-     "url": "/yogur-bebible-frutilla-la-serenisima-clasico-1100-grs-734602/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/655281-55-55/7791337008632_E01.jpg.jpg?v=638827389730900000"
-    },
-    {
-     "sku": "250451",
-     "productId": "765556",
-     "refId": "7791337010017",
-     "nombre": "Yogur Griego natural sin endulzar Yogurísimo 300 grs",
-     "cantidad": 3,
-     "precio": 2492.75,
-     "url": "/yogur-griego-natural-sin-endulzar-yogurisimo-300-grs-765556/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/710096-55-55/7791337010017_01.jpg?v=638936270122200000"
-    },
-    {
-     "sku": "185960",
-     "productId": "738554",
-     "refId": "7791290795778",
-     "nombre": "Desinfectante en aerosol Cif original 360 cc",
-     "cantidad": 2,
-     "precio": 2541.75,
-     "url": "/desinfectante-en-aerosol-cif-original-360-cc/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/513665-55-55/7791290795778_01.jpg?v=638496742935800000"
-    },
-    {
-     "sku": "220193",
-     "productId": "753541",
-     "refId": "7790990003787",
-     "nombre": "Detergente Magistral Ultra de limón dp 450 ml",
-     "cantidad": 2,
-     "precio": 2249,
-     "url": "/detergente-magistral-ultra-de-limon-dp-450-ml-753541/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/601220-55-55/7790990003787_01.jpg?v=638693607613000000"
-    },
-    {
-     "sku": "14643",
-     "productId": "579537",
-     "refId": "7791070003222",
-     "nombre": "Rollo de cocina Sol Mayor 3 x 40 paños",
-     "cantidad": 3,
-     "precio": 1026.75,
-     "url": "/rollo-de-cocina-sol-mayor-3-x-40-panos-14643/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/183767-55-55/7791070003222_02.jpg?v=637468591413600000"
-    },
-    {
-     "sku": "171435",
-     "productId": "733274",
-     "refId": "7792180143488",
-     "nombre": "Galletitas anillitos 9 de Oro de coco 180 g.",
-     "cantidad": 1,
-     "precio": 1040,
-     "url": "/galletitas-anillitos-9-de-oro-de-coco-180-g-733274/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/476876-55-55/7792180143488_E02.jpg?v=638440340341070000"
-    },
-    {
-     "sku": "9136",
-     "productId": "521124",
-     "refId": "7622300742645",
-     "nombre": "Galletitas dulces Duquesa Terrabusi 115 g.",
-     "cantidad": 2,
-     "precio": 806,
-     "url": "/galletitas-dulces-duquesa-terrabusi-115-g-521124/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/428496-55-55/7622300742645_E01.jpg?v=638392064655830000"
-    },
-    {
-     "sku": "11949",
-     "productId": "647989",
-     "refId": "2505311000001",
-     "nombre": "Queso cremoso La Paulina x kg.",
-     "cantidad": 5,
-     "precio": 1998,
-     "url": "/queso-cremoso-la-paulina-x-kg-647989/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/364370-55-55/2505311000001_E02.jpg?v=638264048747430000"
-    },
-    {
-     "sku": "184878",
-     "productId": "738118",
-     "refId": "7791720028773",
-     "nombre": "Tomate perita entero Carrefour classic en lata 400 cc.",
-     "cantidad": 2,
-     "precio": 1118.6,
-     "url": "/tomate-perita-entero-carrefour-classic-en-lata-400-cc-738118/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/537577-55-55/7791720028773_01.jpg?v=638550124699870000"
-    },
-    {
-     "sku": "24176",
-     "productId": "476594",
-     "refId": "7798152224155",
-     "nombre": "Pan de mesa Carrefour classic blanco lacteado 600 g.",
-     "cantidad": 1,
-     "precio": 3861,
-     "url": "/pan-de-mesa-carrefour-classic-blanco-lacteado-600-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/420221-55-55/7798152224155_01.jpg?v=638859473721170000"
     }
    ]
   }
