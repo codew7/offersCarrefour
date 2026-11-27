@@ -1,10 +1,10 @@
 {
- "exportado": "2026-11-22T00:29:50.148Z",
+ "exportado": "2026-11-27T21:56:50.750Z",
  "pedidos": [
   {
    "pedido": "1677979737987-01",
    "fecha": "2026-11-21T21:22:11.9813166+00:00",
-   "estado": "payment-approved",
+   "estado": "invoiced",
    "items": [
     {
      "sku": "293484",
@@ -127,21 +127,11 @@
      "img": "https://carrefourar.vteximg.com.br/arquivos/ids/914090-200-200/7790070036506_01.jpg?v=639222250081030000"
     },
     {
-     "sku": "169905",
-     "productId": "731392",
-     "refId": "7791720030042",
-     "nombre": "Porotos de soja Carrefour classic seca remojada 300 g.",
-     "cantidad": 1,
-     "precio": 1011.5,
-     "url": "/porotos-de-soja-carrefour-classic-seca-remojada-300-g-731392/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/537473-200-200/7791720030042_01.jpg?v=638549445835900000"
-    },
-    {
      "sku": "169638",
      "productId": "730997",
      "refId": "7790070432261",
      "nombre": "Arroz preparado Gallo queso dp 240 g.",
-     "cantidad": 2,
+     "cantidad": 1,
      "precio": 2144.35,
      "url": "/arroz-preparado-gallo-queso-dp-240-g-730997/p",
      "img": "https://carrefourar.vteximg.com.br/arquivos/ids/906145-200-200/7790070432261_E01.jpg?v=639203438596770000"
@@ -171,7 +161,7 @@
      "productId": "724920",
      "refId": "7797906054833",
      "nombre": "Papas crinkle Mc cain en bolsa 600 g.",
-     "cantidad": 2,
+     "cantidad": 1,
      "precio": 6277.5,
      "url": "/papas-crinkle-mc-cain-en-bolsa-600-g-724920/p",
      "img": "https://carrefourar.vteximg.com.br/arquivos/ids/845818-200-200/7797906054833_01.jpg?v=639111876190570000"
@@ -10372,273 +10362,6 @@
      "precio": 6552,
      "url": "/nugget-de-pollo-granja-del-sol-400-g-717208/p",
      "img": "https://carrefourar.vteximg.com.br/arquivos/ids/685583-55-55/7790070034410_E01.jpg?v=638895638848500000"
-    }
-   ]
-  },
-  {
-   "pedido": "1579197802700-01",
-   "fecha": "2025-11-26T22:37:48.7812183+00:00",
-   "estado": "invoiced",
-   "items": [
-    {
-     "sku": "22940",
-     "productId": "663713",
-     "refId": "7790070231420",
-     "nombre": "Aceite de girasol Lira 1.5 l.",
-     "cantidad": 2,
-     "precio": 4644,
-     "url": "/aceite-de-girasol-lira-15-l/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/155433-55-55/7790070231420_02.jpg?v=637457062458370000"
-    },
-    {
-     "sku": "144765",
-     "productId": "720855",
-     "refId": "7790070036346",
-     "nombre": "Acelga Lucchetti en bolsa 450 g.",
-     "cantidad": 2,
-     "precio": 2733.75,
-     "url": "/acelga-lucchetti-en-bolsa-450-g-720855/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/345666-55-55/7790070036346_01.jpg?v=638229523086270000"
-    },
-    {
-     "sku": "14500",
-     "productId": "113160",
-     "refId": "7791120021558",
-     "nombre": "Arroz Molinos Ala doble carolina bolsa 1 kg.",
-     "cantidad": 2,
-     "precio": 1950,
-     "url": "/arroz-molinos-ala-doble-carolina-bolsa-1-kg/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/509499-55-55/7791120021558_01.jpg?v=638491481024000000"
-    },
-    {
-     "sku": "18936",
-     "productId": "113165",
-     "refId": "7791120037559",
-     "nombre": "Arroz Molinos Ala parboil bolsa 1 kg.",
-     "cantidad": 1,
-     "precio": 1260,
-     "url": "/arroz-molinos-ala-parboil-bolsa-1-kg/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/499390-55-55/7791120037559_01.jpg?v=638481808035000000"
-    },
-    {
-     "sku": "48877",
-     "productId": "678861",
-     "refId": "7790742625106",
-     "nombre": "Dulce de leche La serenisima colonial 250 g.",
-     "cantidad": 2,
-     "precio": 1961.25,
-     "url": "/dulce-de-leche-la-serenisima-colonial-250-g-678861/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/669112-55-55/7790742625106_E01.jpg?v=638845766600800000"
-    },
-    {
-     "sku": "144764",
-     "productId": "720853",
-     "refId": "7790070036315",
-     "nombre": "Espinaca Lucchetti en bolsa 400 g.",
-     "cantidad": 2,
-     "precio": 2459.25,
-     "url": "/espinaca-lucchetti-en-bolsa-400-g-720853/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/620642-55-55/7790070036315_02.jpg?v=638745463869600000"
-    },
-    {
-     "sku": "202668",
-     "productId": "746354",
-     "refId": "7794990177523",
-     "nombre": "La Paulina queso en hebras italiano 125 grs",
-     "cantidad": 2,
-     "precio": 2696.25,
-     "url": "/la-paulina-queso-en-hebras-italiano-125-grs-746354/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/758685-55-55/7794990177523_E01.jpg?v=638981440668130000"
-    },
-    {
-     "sku": "144373",
-     "productId": "720719",
-     "refId": "7790742363008",
-     "nombre": "Leche La serenisima clásica 3% 1L.",
-     "cantidad": 12,
-     "precio": 1576.75,
-     "url": "/leche-la-serenisima-clasica-3-1l-720719/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/636141-55-55/7790742363008_01.jpg.jpg?v=638780812788100000"
-    },
-    {
-     "sku": "144371",
-     "productId": "720720",
-     "refId": "7790742363107",
-     "nombre": "Leche La serenisima liviana 1% 1L",
-     "cantidad": 4,
-     "precio": 1576.75,
-     "url": "/leche-la-serenisima-liviana-1-1l-720720/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/636143-55-55/7790742363107_01.jpg.jpg?v=638780813024830000"
-    },
-    {
-     "sku": "100195",
-     "productId": "704107",
-     "refId": "7790580132453",
-     "nombre": "lentejas secas remojadas Arcor en lata 300 g.",
-     "cantidad": 2,
-     "precio": 997.5,
-     "url": "/lentejas-secas-remojadas-arcor-en-lata-300-g-704107/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/381237-55-55/7790580132453_01.jpg?v=638315050219970000"
-    },
-    {
-     "sku": "3899",
-     "productId": "8890",
-     "refId": "7793940054006",
-     "nombre": "Manteca La Serenísima extra para untar 200 g.",
-     "cantidad": 3,
-     "precio": 2925,
-     "url": "/manteca-la-serenisima-extra-para-untar-200-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/636209-55-55/7793940054006_01.jpg.jpg?v=638780820785500000"
-    },
-    {
-     "sku": "71968",
-     "productId": "684562",
-     "refId": "7790580134495",
-     "nombre": "Salsa portuguesa Arcor doy pack 340 g.",
-     "cantidad": 1,
-     "precio": 861.75,
-     "url": "/salsa-portuguesa-arcor-doy-pack-340-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/381215-55-55/7790580134495_E01.jpg?v=638315050128500000"
-    },
-    {
-     "sku": "169893",
-     "productId": "731407",
-     "refId": "7790070622020",
-     "nombre": "Tapa para empanada criolla La salteña mas crocantes 12 uni",
-     "cantidad": 4,
-     "precio": 1499.25,
-     "url": "/tapa-para-empanada-criolla-la-saltena-mas-crocantes-12-uni-731407/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/445274-55-55/7790070622020_E02.jpg?v=638403367874300000"
-    },
-    {
-     "sku": "169902",
-     "productId": "731418",
-     "refId": "7790070622037",
-     "nombre": "Tapa para pascualina La salteña criolla 2 uni",
-     "cantidad": 2,
-     "precio": 1691.25,
-     "url": "/tapa-para-pascualina-la-saltena-criolla-2-uni-731418/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/445275-55-55/7790070622037_02.jpg?v=638403367886670000"
-    },
-    {
-     "sku": "220193",
-     "productId": "753541",
-     "refId": "7790990003787",
-     "nombre": "Detergente Magistral Ultra de limón dp 450 ml",
-     "cantidad": 4,
-     "precio": 2625,
-     "url": "/detergente-magistral-ultra-de-limon-dp-450-ml-753541/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/601220-55-55/7790990003787_01.jpg?v=638693607613000000"
-    },
-    {
-     "sku": "9136",
-     "productId": "521124",
-     "refId": "7622300742645",
-     "nombre": "Galletitas dulces Duquesa Terrabusi 115 g.",
-     "cantidad": 2,
-     "precio": 981.75,
-     "url": "/galletitas-dulces-duquesa-terrabusi-115-g-521124/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/428496-55-55/7622300742645_E01.jpg?v=638392064655830000"
-    },
-    {
-     "sku": "90944",
-     "productId": "695707",
-     "refId": "7791290792791",
-     "nombre": "Jabón líquido para ropa Skip bio encimas 3 l.",
-     "cantidad": 1,
-     "precio": 8862.75,
-     "url": "/jabon-liquido-para-ropa-skip-bio-encimas-3-l-695707/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/629697-55-55/7791290792791_01.jpg?v=638768704984700000"
-    },
-    {
-     "sku": "7624",
-     "productId": "273723",
-     "refId": "77903501",
-     "nombre": "Obleas Ópera clásicas 55 g.",
-     "cantidad": 3,
-     "precio": 470.02,
-     "url": "/obleas-opera-clasicas-55-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/346354-55-55/77903501_E01.jpg?v=638235573378730000"
-    },
-    {
-     "sku": "157233",
-     "productId": "726320",
-     "refId": "7793890259902",
-     "nombre": "Pan dulce con frutas Valente 400 grs",
-     "cantidad": 1,
-     "precio": 3411.85,
-     "url": "/pan-dulce-con-frutas-valente-400-grs-726320/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/740046-55-55/7793890259902_01.jpg?v=638960484274170000"
-    },
-    {
-     "sku": "157209",
-     "productId": "726319",
-     "refId": "7793890259896",
-     "nombre": "Pan dulce con chips Valente 400 grs",
-     "cantidad": 1,
-     "precio": 3737.5,
-     "url": "/pan-dulce-con-chips-valente-400-grs-726319/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/740044-55-55/7793890259896_01.jpg?v=638960483729100000"
-    },
-    {
-     "sku": "26246",
-     "productId": "355941",
-     "refId": "7790380011903",
-     "nombre": "Turrón de Maní y almendras semiblando Georgalos 80 g.",
-     "cantidad": 2,
-     "precio": 1387.75,
-     "url": "/turron-de-mani-y-almendras-semiblando-georgalos-80-g/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/192592-55-55/7790380011903_02.jpg?v=637515949291230000"
-    },
-    {
-     "sku": "86695",
-     "productId": "694583",
-     "refId": "7790070509123",
-     "nombre": "Yerba mate Chamigo con palo 500 g.",
-     "cantidad": 2,
-     "precio": 1350,
-     "url": "/yerba-mate-chamigo-con-palo-500-g-694583/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/234907-55-55/7790070509123_02.jpg?v=637793428986370000"
-    },
-    {
-     "sku": "218774",
-     "productId": "751997",
-     "refId": "7791070003215",
-     "nombre": "Papel higiénico Sol Mayor hoja simple x4 30 mts",
-     "cantidad": 8,
-     "precio": 1176.75,
-     "url": "/papel-higienico-sol-mayor-hoja-simple-x4-30-mts-751997/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/596504-55-55/7791070003215_02.jpg?v=638669527252930000"
-    },
-    {
-     "sku": "11949",
-     "productId": "647989",
-     "refId": "2505311000001",
-     "nombre": "Queso cremoso La Paulina x kg.",
-     "cantidad": 5,
-     "precio": 1698,
-     "url": "/queso-cremoso-la-paulina-x-kg-647989/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/364370-55-55/2505311000001_E02.jpg?v=638264048747430000"
-    },
-    {
-     "sku": "98988",
-     "productId": "703706",
-     "refId": "7790520025395",
-     "nombre": "Repelente para mosquitos OFF! Family aerosol 170 ml",
-     "cantidad": 3,
-     "precio": 3150,
-     "url": "/repelente-para-mosquitos-off-family-aerosol-170-ml-703706/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/400370-55-55/7790520025395_01.jpg?v=638935613438770000"
-    },
-    {
-     "sku": "73256",
-     "productId": "596906",
-     "refId": "7792540250450",
-     "nombre": "Azúcar Ledesma molida superior bolsa 1 kg.",
-     "cantidad": 1,
-     "precio": 1299,
-     "url": "/azucar-ledesma-molida-superior-bolsa-1-kg/p",
-     "img": "https://carrefourar.vteximg.com.br/arquivos/ids/237222-55-55/7792540250450_02.jpg?v=637822592388930000"
     }
    ]
   }
